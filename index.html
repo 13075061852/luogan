@@ -1,0 +1,432 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广俊螺杆库</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>广俊螺杆库</h1>
+            </div>
+
+            <nav class="nav-menu" aria-label="页面导航">
+                <button class="nav-item active" data-page="home" type="button">排布设计</button>
+                <button class="nav-item" data-page="screw-settings" type="button">螺杆库</button>
+                <button class="nav-item" data-page="screw-blocks" type="button">模块库</button>
+                <button class="nav-item" data-page="history" type="button">历史方案</button>
+                <button class="nav-item" data-page="system-settings" type="button">系统设置</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <section id="home" class="page active">
+                <section class="workspace-grid">
+                    <div class="card block-library-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Block Library</p>
+                                <h3>螺纹块库</h3>
+                            </div>
+                        </div>
+                        <input id="block-search" class="search-input" type="text" placeholder="搜索名称、编码或说明">
+                        <div id="block-library" class="block-library"></div>
+                    </div>
+
+                    <div class="card screw-stage-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Engineering Layout</p>
+                                <h3>螺杆排布视图</h3>
+                            </div>
+                            <div class="section-actions">
+                                <select id="active-screw-select" class="toolbar-select" aria-label="当前螺杆"></select>
+                                <button id="toggle-library" class="btn ghost" type="button">收起模块库</button>
+                                <button id="clear-layout" class="btn ghost" type="button">清空螺纹块</button>
+                                <button id="save-layout" class="btn ghost" type="button">保存当前排布</button>
+                                <button id="reset-layout" class="btn ghost" type="button">恢复默认排布</button>
+                                <button id="print-layout" class="btn ghost" type="button">打印当前螺杆</button>
+                            </div>
+                        </div>
+
+                        <div class="screw-stage-wrap">
+                            <div id="sleeve-overlay" class="machine-shell" aria-label="套筒外层"></div>
+                            <div class="screw-stage" id="screw-stage" aria-label="螺杆排布画布"></div>
+                            <div class="annotation annotation-bottom" id="bottom-annotation"></div>
+                            <div id="delete-dropzone" class="delete-dropzone">
+                                将右侧螺纹块向下拖到这里即可删除
+                            </div>
+                        </div>
+
+                        <div class="selection-toolbar">
+                            <div class="selection-copy">
+                                <div class="screw-metrics">
+                                    <div class="metric-pill">
+                                        <span class="metric-label">当前方案</span>
+                                        <strong id="current-layout-name">未绑定方案</strong>
+                                    </div>
+                                    <div class="metric-pill">
+                                        <span class="metric-label">剩余长度</span>
+                                        <strong id="current-remaining-length">0 mm</strong>
+                                    </div>
+                                    <div class="metric-pill">
+                                        <span class="metric-label">螺纹块数量</span>
+                                        <strong id="current-block-count">0</strong>
+                                    </div>
+                                    <div class="metric-pill">
+                                        <span class="metric-label">长度映射值</span>
+                                        <strong id="current-length-scale">40</strong>
+                                    </div>
+                                    <div class="metric-pill metric-pill-action">
+                                        <button id="toggle-sleeves" class="btn secondary" type="button">隐藏套筒</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section id="system-settings" class="page">
+                <section class="card system-settings-card">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">System Settings</p>
+                            <h3>系统参数设置</h3>
+                        </div>
+                    </div>
+                    <form id="system-settings-form" class="settings-form">
+                        <div class="system-settings-layout">
+                            <section class="system-settings-panel">
+                                <div class="settings-subtitle-row">
+                                    <span class="settings-subtitle">基础参数</span>
+                                </div>
+                                <div class="system-settings-fields">
+                                    <label>
+                                        <span>项目名称</span>
+                                        <input id="system-project-name" type="text" maxlength="40" placeholder="广俊螺杆库">
+                                    </label>
+                                    <label>
+                                        <span>默认长度映射值</span>
+                                        <input id="system-length-scale" type="number" min="10" max="200" step="1" placeholder="40">
+                                    </label>
+                                    <label>
+                                        <span>首页螺纹块插入动画时间 ms</span>
+                                        <input id="system-insert-duration" type="number" min="0" max="3000" step="50" placeholder="500">
+                                    </label>
+                                </div>
+                            </section>
+
+                            <section class="system-settings-panel">
+                                <div class="settings-subtitle-row">
+                                    <span class="settings-subtitle">删除动画样式</span>
+                                </div>
+                                <div class="system-choice-group">
+                                    <label class="system-choice-card">
+                                        <input type="radio" name="system-delete-animation" value="collapse">
+                                        <span class="system-choice-title">上下坍塌</span>
+                                        <span class="system-choice-copy">删除后向内收起</span>
+                                    </label>
+                                    <label class="system-choice-card">
+                                        <input type="radio" name="system-delete-animation" value="slide-right">
+                                        <span class="system-choice-title">右滑淡出</span>
+                                        <span class="system-choice-copy">向右滑出后消失</span>
+                                    </label>
+                                    <label class="system-choice-card">
+                                        <input type="radio" name="system-delete-animation" value="fade-scale">
+                                        <span class="system-choice-title">渐隐缩小</span>
+                                        <span class="system-choice-copy">缩小并淡出</span>
+                                    </label>
+                                </div>
+                            </section>
+
+                            <section class="system-settings-panel">
+                                <div class="settings-subtitle-row">
+                                    <span class="settings-subtitle">打印携带参数</span>
+                                </div>
+                                <div class="system-toggle-grid">
+                                    <label class="system-toggle-card">
+                                        <input id="system-print-current-layout" type="checkbox" checked>
+                                        <span class="system-toggle-copy">
+                                            <span class="system-toggle-title">当前方案</span>
+                                            <span class="system-toggle-note">打印页显示当前绑定方案名称</span>
+                                        </span>
+                                        <span class="system-toggle-indicator" aria-hidden="true"></span>
+                                    </label>
+                                    <label class="system-toggle-card">
+                                        <input id="system-print-block-count" type="checkbox" checked>
+                                        <span class="system-toggle-copy">
+                                            <span class="system-toggle-title">螺纹块数量</span>
+                                            <span class="system-toggle-note">打印页显示当前排布数量统计</span>
+                                        </span>
+                                        <span class="system-toggle-indicator" aria-hidden="true"></span>
+                                    </label>
+                                    <label class="system-toggle-card">
+                                        <input id="system-print-screw-length" type="checkbox" checked>
+                                        <span class="system-toggle-copy">
+                                            <span class="system-toggle-title">螺杆长度</span>
+                                            <span class="system-toggle-note">打印页显示当前螺杆有效长度</span>
+                                        </span>
+                                        <span class="system-toggle-indicator" aria-hidden="true"></span>
+                                    </label>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn" type="submit">保存系统参数</button>
+                        </div>
+                    </form>
+                </section>
+            </section>
+
+            <section id="screw-settings" class="page">
+                <div class="settings-grid">
+                    <section class="card settings-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Screw Library</p>
+                                <h3>已有螺杆</h3>
+                            </div>
+                            <div class="section-actions">
+                                <button id="new-screw" class="btn ghost" type="button">新增螺杆</button>
+                            </div>
+                        </div>
+                        <div id="screw-list" class="management-list"></div>
+                    </section>
+
+                    <section class="card settings-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Screw Settings</p>
+                                <h3>螺杆参数设置</h3>
+                            </div>
+                        </div>
+                        <form id="screw-settings-form" class="settings-form">
+                            <input type="hidden" id="editing-screw-id">
+                            <label>
+                                <span>螺杆名称 / 类型</span>
+                                <input id="screw-name" type="text" maxlength="40" placeholder="例如：A线">
+                            </label>
+                            <label>
+                                <span>螺杆长度 mm</span>
+                                <input id="screw-length" type="number" min="10" step="10" placeholder="480">
+                            </label>
+                            <label>
+                                <span>螺杆头长度 mm</span>
+                                <input id="screw-head-length" type="number" min="10" step="1" placeholder="60">
+                            </label>
+                            <label>
+                                <span>前置小套筒名称</span>
+                                <input id="lead-sleeve-name" type="text" maxlength="40" placeholder="Zwischenflansch">
+                            </label>
+                            <div>
+                                <div class="settings-subtitle-row">
+                                    <span class="settings-subtitle">套筒名称</span>
+                                    <span class="settings-subtitle-hint">（勾选表示排气口）</span>
+                                </div>
+                                <div id="sleeve-editor" class="sleeve-editor"></div>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn" type="submit">保存参数</button>
+                                <button id="delete-screw" class="btn danger" type="button">删除螺杆</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <section id="screw-blocks" class="page">
+                <div class="management-grid">
+                    <section class="card management-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Inventory</p>
+                                <h3>现有模块</h3>
+                            </div>
+                            <div class="section-actions">
+                                <button id="new-block" class="btn ghost" type="button">新增模块</button>
+                            </div>
+                        </div>
+                        <div id="block-list" class="management-list"></div>
+                    </section>
+
+                    <section class="card management-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Create / Update</p>
+                                <h3>模块编辑器</h3>
+                            </div>
+                        </div>
+                        <form id="block-form" class="block-form">
+                            <input type="hidden" id="editing-block-id">
+                            <label>
+                                <span>模块名称</span>
+                                <input id="block-name" type="text" placeholder="例如：45° 捏合块">
+                            </label>
+                            <label>
+                                <span>模块编码</span>
+                                <input id="block-code" type="text" placeholder="例如：KB5-2-30-45">
+                            </label>
+                            <label>
+                                <span>长度 mm</span>
+                                <input id="block-length" type="number" min="10" step="10" placeholder="60">
+                            </label>
+                            <label>
+                                <span>数量</span>
+                                <input id="block-quantity" type="number" min="0" step="1" placeholder="1">
+                            </label>
+                            <label>
+                                <span>功能类型</span>
+                                <select id="block-type">
+                                    <option value="conveying">输送</option>
+                                    <option value="kneading">剪切</option>
+                                    <option value="mixing">分散</option>
+                                    <option value="reverse">反向</option>
+                                </select>
+                            </label>
+                            <div class="block-style-row">
+                                <label>
+                                    <span>螺纹样式</span>
+                                    <select id="block-pattern-style">
+                                        <option value="diagonal">斜纹</option>
+                                        <option value="vertical">竖纹</option>
+                                        <option value="reverse-diagonal">反斜纹</option>
+                                        <option value="mixed">混合纹</option>
+                                        <option value="solid">纯色</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>颜色</span>
+                                    <input id="block-color" type="color" value="#8f9ba7">
+                                </label>
+                                <div class="block-preview-panel">
+                                    <span>螺纹块预览</span>
+                                    <div class="block-preview-stage">
+                                        <div id="block-preview-slot" class="block-preview-slot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <label>
+                                <span>工艺说明</span>
+                                <textarea id="block-description" rows="4" placeholder="例如：强化塑化与分散，适合主熔融段。"></textarea>
+                            </label>
+                            <div class="form-actions">
+                                <button class="btn" type="submit">保存模块</button>
+                                <button id="delete-current-block" class="btn danger" type="button">删除当前模块</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+
+            <section id="history" class="page">
+                <section class="card">
+                    <input id="history-search" class="search-input" type="text" placeholder="搜索方案名称、螺杆或备注">
+                    <div id="history-list" class="history-list"></div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <div id="print-stage-root" class="print-stage-root" aria-hidden="true"></div>
+    <div id="save-layout-modal" class="modal-backdrop" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="save-layout-title">
+            <div class="modal-heading">
+                <div>
+                    <p class="eyebrow">Save Layout</p>
+                    <h3 id="save-layout-title">保存布局</h3>
+                </div>
+            </div>
+            <form id="save-layout-form" class="modal-form">
+                <div class="save-mode-group">
+                    <label class="save-mode-option">
+                        <input id="save-layout-mode-new" type="radio" name="save-layout-mode" value="new" checked>
+                        <span>新增布局</span>
+                    </label>
+                    <label class="save-mode-option">
+                        <input id="save-layout-mode-overwrite" type="radio" name="save-layout-mode" value="overwrite">
+                        <span>覆盖当前布局</span>
+                    </label>
+                </div>
+                <label id="save-layout-target-wrap" hidden>
+                    <span>选择要覆盖的布局</span>
+                    <select id="save-layout-target"></select>
+                </label>
+                <label id="save-layout-name-wrap">
+                    <span>布局名称</span>
+                    <input id="save-layout-name" type="text" maxlength="60" placeholder="请输入布局名称" required>
+                </label>
+                <label>
+                    <span>备注</span>
+                    <textarea id="save-layout-note" rows="4" maxlength="200" placeholder="可选，记录这版布局的用途或说明"></textarea>
+                </label>
+                <div class="modal-actions">
+                    <button id="cancel-save-layout" class="btn ghost" type="button">取消</button>
+                    <button class="btn" type="submit">确认保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="history-preview-modal" class="modal-backdrop" hidden>
+        <div class="modal-card print-preview-card" role="dialog" aria-modal="true" aria-labelledby="history-preview-title">
+            <div class="modal-heading">
+                <div>
+                    <p class="eyebrow">History Preview</p>
+                    <h3 id="history-preview-title">方案预览</h3>
+                </div>
+            </div>
+            <div id="history-preview-meta" class="print-preview-meta"></div>
+            <div class="print-preview-stage">
+                <img id="history-preview-image" alt="历史方案预览图">
+            </div>
+            <div class="modal-actions">
+                <button id="edit-history-preview" class="btn" type="button">去编辑</button>
+                <button id="close-history-preview" class="btn ghost" type="button">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-delete-modal" class="modal-backdrop" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
+            <div class="modal-heading">
+                <div>
+                    <p class="eyebrow">Confirm Delete</p>
+                    <h3 id="confirm-delete-title">确认删除</h3>
+                </div>
+            </div>
+            <p id="confirm-delete-message" class="history-meta">删除后将无法恢复。</p>
+            <div class="modal-actions">
+                <button id="cancel-delete" class="btn ghost" type="button">取消</button>
+                <button id="confirm-delete" class="btn danger" type="button">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-preview-modal" class="modal-backdrop" hidden>
+        <div class="modal-card print-preview-card" role="dialog" aria-modal="true" aria-labelledby="print-preview-title">
+            <div class="modal-heading">
+                <div>
+                    <p class="eyebrow">Print Preview</p>
+                    <h3 id="print-preview-title">打印预览</h3>
+                </div>
+            </div>
+            <div id="print-preview-meta" class="print-preview-meta"></div>
+            <div class="print-preview-stage">
+                <img id="print-preview-image" alt="打印预览图">
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-print-preview" class="btn ghost" type="button">取消</button>
+                <button id="confirm-print-preview" class="btn" type="button">确认打印</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-toast" class="app-toast" hidden></div>
+
+    <script src="index.js"></script>
+</body>
+</html>
