@@ -399,6 +399,8 @@ const screwNameInput = document.getElementById("screw-name");
 const screwLengthInput = document.getElementById("screw-length");
 const screwHeadLengthInput = document.getElementById("screw-head-length");
 const leadSleeveNameInput = document.getElementById("lead-sleeve-name");
+const sleeveApplySourceSelect = document.getElementById("sleeve-apply-source");
+const applySleeveTemplateButton = document.getElementById("apply-sleeve-template");
 const sleeveEditor = document.getElementById("sleeve-editor");
 const newScrewButton = document.getElementById("new-screw");
 const deleteScrewButton = document.getElementById("delete-screw");
@@ -452,6 +454,14 @@ const importDataForm = document.getElementById("import-data-form");
 const importDataFileName = document.getElementById("import-data-file-name");
 const importDataFileMeta = document.getElementById("import-data-file-meta");
 const cancelImportDataButton = document.getElementById("cancel-import-data");
+const exportDataModal = document.getElementById("export-data-modal");
+const exportDataForm = document.getElementById("export-data-form");
+const exportIncludeScrewsInput = document.getElementById("export-include-screws");
+const exportIncludeBlocksInput = document.getElementById("export-include-blocks");
+const exportIncludeLayoutInput = document.getElementById("export-include-layout");
+const exportIncludeHistoryInput = document.getElementById("export-include-history");
+const exportIncludeSettingsInput = document.getElementById("export-include-settings");
+const cancelExportDataButton = document.getElementById("cancel-export-data");
 const printPreviewModal = document.getElementById("print-preview-modal");
 const printPreviewMeta = document.getElementById("print-preview-meta");
 const printPreviewImage = document.getElementById("print-preview-image");
@@ -729,6 +739,64 @@ function downloadTextFile(fileName, content, type = "application/json;charset=ut
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+}
+
+function openExportDataModal() {
+    if (!exportDataModal) {
+        return;
+    }
+    exportDataModal.hidden = false;
+}
+
+function closeExportDataModal() {
+    if (exportDataModal) {
+        exportDataModal.hidden = true;
+    }
+}
+
+function buildSelectiveExportPayload(options = {}) {
+    const includeLayout = Boolean(options.includeLayout);
+    const includeHistory = Boolean(options.includeHistory);
+    const includeSettings = Boolean(options.includeSettings);
+    const includeBlocks = Boolean(options.includeBlocks || includeLayout || includeHistory);
+    const includeScrews = Boolean(options.includeScrews || includeHistory);
+
+    const payload = {};
+
+    if (includeSettings) {
+        payload.projectName = state.projectName;
+        payload.libraryCollapsed = state.libraryCollapsed;
+        payload.sleevesVisible = state.sleevesVisible;
+        payload.activeScrewId = state.activeScrewId;
+        payload.activeHistoryId = state.activeHistoryId;
+        payload.insertAnimationMs = state.insertAnimationMs;
+        payload.deleteAnimationStyle = state.deleteAnimationStyle;
+        payload.lengthScale = state.lengthScale;
+        payload.printOptions = { ...state.printOptions };
+        const activeScrew = getActiveScrew();
+        payload.lineName = activeScrew?.name || DEFAULT_LINE_NAME;
+        payload.lineLength = activeScrew?.length || DEFAULT_LINE_LENGTH;
+    }
+
+    if (includeBlocks) {
+        payload.blocks = structuredClone(state.blocks);
+    }
+
+    if (includeLayout) {
+        payload.layout = structuredClone(state.layout);
+    }
+
+    if (includeScrews) {
+        payload.screws = structuredClone(state.screws);
+        payload.activeScrewId ??= state.activeScrewId;
+    }
+
+    if (includeHistory) {
+        payload.history = structuredClone(state.history);
+        payload.activeHistoryId ??= state.activeHistoryId;
+    }
+
+    return payload;
 }
 
 function openImportDataModal() {
@@ -1430,6 +1498,56 @@ function renderAnnotationsForTarget(target, layoutBlocks, screw, scale = state.l
     });
 }
 
+function populateSleeveTemplateOptions(screw = getScrewById(state.editingScrewId)) {
+    if (!sleeveApplySourceSelect) {
+        return;
+    }
+    const currentScrewId = screw?.id || "";
+    const sourceScrews = state.screws.filter((item) => item.id !== currentScrewId);
+    sleeveApplySourceSelect.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = sourceScrews.length ? "选择要套用的螺杆" : "暂无可套用的其他螺杆";
+    sleeveApplySourceSelect.appendChild(placeholder);
+
+    sourceScrews.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.name;
+        sleeveApplySourceSelect.appendChild(option);
+    });
+
+    sleeveApplySourceSelect.disabled = sourceScrews.length === 0;
+    if (applySleeveTemplateButton) {
+        applySleeveTemplateButton.disabled = sourceScrews.length === 0;
+    }
+}
+
+function applySleeveTemplateFromScrew(sourceScrewId) {
+    const sourceScrew = getScrewById(sourceScrewId);
+    if (!sourceScrew) {
+        showToast("请选择要套用的螺杆。");
+        return;
+    }
+    if (leadSleeveNameInput) {
+        leadSleeveNameInput.value = getLeadSleeveName(sourceScrew);
+    }
+    if (sleeveEditor) {
+        const sleeveInputs = Array.from(sleeveEditor.querySelectorAll("input[data-sleeve-index]"));
+        const exhaustInputs = Array.from(sleeveEditor.querySelectorAll("input[data-exhaust-index]"));
+        const sleeves = getScrewSleeves(sourceScrew);
+        const exhaustChannels = getExhaustChannels(sourceScrew);
+        sleeveInputs.forEach((input, index) => {
+            input.value = sleeves[index] || `套筒 ${index + 1}`;
+        });
+        exhaustInputs.forEach((input, index) => {
+            input.checked = Boolean(exhaustChannels[index]);
+        });
+    }
+    showToast(`已套用螺杆“${sourceScrew.name}”的套筒设置。`);
+}
+
 function renderSleeveOverlay() {
     if (!sleeveOverlay) {
         return;
@@ -1888,6 +2006,7 @@ function populateScrewSettingsForm(screw = getScrewById(state.editingScrewId)) {
         leadSleeveNameInput.value = screw ? getLeadSleeveName(screw) : DEFAULT_LEAD_SLEEVE_NAME;
     }
     renderSleeveEditor(screw);
+    populateSleeveTemplateOptions(screw);
     if (deleteScrewButton) {
         deleteScrewButton.disabled = !screw || state.screws.length <= 1;
     }
@@ -2943,6 +3062,16 @@ importDataModal?.addEventListener("click", (event) => {
     }
 });
 
+cancelExportDataButton?.addEventListener("click", () => {
+    closeExportDataModal();
+});
+
+exportDataModal?.addEventListener("click", (event) => {
+    if (event.target === exportDataModal) {
+        closeExportDataModal();
+    }
+});
+
 printPreviewModal?.addEventListener("click", (event) => {
     if (event.target === printPreviewModal) {
         closePrintPreviewModal();
@@ -3006,14 +3135,7 @@ systemSettingsForm?.addEventListener("submit", (event) => {
 });
 
 exportProjectDataButton?.addEventListener("click", () => {
-    const backup = {
-        kind: BACKUP_FILE_KIND,
-        version: BACKUP_FILE_VERSION,
-        exportedAt: new Date().toISOString(),
-        payload: createPersistedPayload()
-    };
-    downloadTextFile(getBackupFileName(), JSON.stringify(backup, null, 2));
-    showToast("项目数据已导出。");
+    openExportDataModal();
 });
 
 importProjectDataButton?.addEventListener("click", () => {
@@ -3065,6 +3187,34 @@ importDataForm?.addEventListener("submit", (event) => {
     closeImportDataModal();
     switchPage("system-settings");
     showToast(mode === "append" ? "备份数据已追加到当前项目。" : "备份数据已覆盖导入。");
+});
+
+exportDataForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const options = {
+        includeScrews: Boolean(exportIncludeScrewsInput?.checked),
+        includeBlocks: Boolean(exportIncludeBlocksInput?.checked),
+        includeLayout: Boolean(exportIncludeLayoutInput?.checked),
+        includeHistory: Boolean(exportIncludeHistoryInput?.checked),
+        includeSettings: Boolean(exportIncludeSettingsInput?.checked)
+    };
+    if (!Object.values(options).some(Boolean)) {
+        showToast("请至少选择一项导出内容。");
+        return;
+    }
+    const backup = {
+        kind: BACKUP_FILE_KIND,
+        version: BACKUP_FILE_VERSION,
+        exportedAt: new Date().toISOString(),
+        payload: buildSelectiveExportPayload(options)
+    };
+    downloadTextFile(getBackupFileName(), JSON.stringify(backup, null, 2));
+    closeExportDataModal();
+    showToast("项目数据已导出。");
+});
+
+applySleeveTemplateButton?.addEventListener("click", () => {
+    applySleeveTemplateFromScrew(sleeveApplySourceSelect?.value || "");
 });
 
 resetLayoutButton.addEventListener("click", () => {

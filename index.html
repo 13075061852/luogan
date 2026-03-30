@@ -244,8 +244,14 @@
                             </label>
                             <div>
                                 <div class="settings-subtitle-row">
-                                    <span class="settings-subtitle">套筒名称</span>
-                                    <span class="settings-subtitle-hint">（勾选表示排气口）</span>
+                                    <div class="settings-subtitle-copy">
+                                        <span class="settings-subtitle">套筒名称</span>
+                                        <span class="settings-subtitle-hint">（勾选表示排气口）</span>
+                                    </div>
+                                    <div class="sleeve-apply-actions">
+                                        <select id="sleeve-apply-source" aria-label="选择套用来源螺杆"></select>
+                                        <button id="apply-sleeve-template" class="btn ghost" type="button">套用其他螺杆</button>
+                                    </div>
                                 </div>
                                 <div id="sleeve-editor" class="sleeve-editor"></div>
                             </div>
@@ -457,6 +463,51 @@
                 <div class="modal-actions">
                     <button id="cancel-import-data" class="btn ghost" type="button">取消</button>
                     <button class="btn" type="submit">确认导入</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="export-data-modal" class="modal-backdrop" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="export-data-title">
+            <div class="modal-heading">
+                <div>
+                    <p class="eyebrow">Export Backup</p>
+                    <h3 id="export-data-title">选择导出内容</h3>
+                </div>
+            </div>
+            <form id="export-data-form" class="modal-form">
+                <div class="export-options-grid">
+                    <label class="export-option-card">
+                        <input id="export-include-screws" type="checkbox" checked>
+                        <span class="export-option-title">螺杆库</span>
+                        <span class="export-option-copy">导出螺杆参数、套筒名称与默认排布。</span>
+                    </label>
+                    <label class="export-option-card">
+                        <input id="export-include-blocks" type="checkbox" checked>
+                        <span class="export-option-title">模块库</span>
+                        <span class="export-option-copy">导出模块名称、长度、颜色与样式。</span>
+                    </label>
+                    <label class="export-option-card">
+                        <input id="export-include-layout" type="checkbox" checked>
+                        <span class="export-option-title">当前排布</span>
+                        <span class="export-option-copy">导出当前首页正在编辑的排布内容。</span>
+                    </label>
+                    <label class="export-option-card">
+                        <input id="export-include-history" type="checkbox" checked>
+                        <span class="export-option-title">历史方案</span>
+                        <span class="export-option-copy">导出已保存的历史排布方案与备注。</span>
+                    </label>
+                    <label class="export-option-card">
+                        <input id="export-include-settings" type="checkbox" checked>
+                        <span class="export-option-title">系统设置</span>
+                        <span class="export-option-copy">导出项目名称、打印选项与动画设置。</span>
+                    </label>
+                </div>
+                <p class="history-meta">导出当前排布或历史方案时，会自动带上所依赖的模块与螺杆数据，保证导入后可正常还原。</p>
+                <div class="modal-actions">
+                    <button id="cancel-export-data" class="btn ghost" type="button">取消</button>
+                    <button class="btn" type="submit">确认导出</button>
                 </div>
             </form>
         </div>
