@@ -19,6 +19,8 @@ const DEFAULT_PRINT_OPTIONS = {
     blockCount: true,
     screwLength: true
 };
+const BACKUP_FILE_KIND = "screw-layout-backup";
+const BACKUP_FILE_VERSION = 1;
 
 let uidCounter = 0;
 
@@ -113,9 +115,13 @@ const typeLabels = {
 
 const patternStyleLabels = {
     diagonal: "斜纹",
+    "fine-diagonal": "细斜纹",
     vertical: "竖纹",
     "reverse-diagonal": "反斜纹",
     mixed: "混合纹",
+    cross: "交叉纹",
+    grid: "网格纹",
+    banded: "宽带纹",
     solid: "纯色"
 };
 
@@ -383,6 +389,9 @@ const systemInsertDurationInput = document.getElementById("system-insert-duratio
 const systemPrintCurrentLayoutInput = document.getElementById("system-print-current-layout");
 const systemPrintBlockCountInput = document.getElementById("system-print-block-count");
 const systemPrintScrewLengthInput = document.getElementById("system-print-screw-length");
+const exportProjectDataButton = document.getElementById("export-project-data");
+const importProjectDataButton = document.getElementById("import-project-data");
+const projectDataFileInput = document.getElementById("project-data-file");
 const screwList = document.getElementById("screw-list");
 const screwSettingsForm = document.getElementById("screw-settings-form");
 const editingScrewIdInput = document.getElementById("editing-screw-id");
@@ -438,6 +447,11 @@ const confirmDeleteModal = document.getElementById("confirm-delete-modal");
 const confirmDeleteMessage = document.getElementById("confirm-delete-message");
 const cancelDeleteButton = document.getElementById("cancel-delete");
 const confirmDeleteButton = document.getElementById("confirm-delete");
+const importDataModal = document.getElementById("import-data-modal");
+const importDataForm = document.getElementById("import-data-form");
+const importDataFileName = document.getElementById("import-data-file-name");
+const importDataFileMeta = document.getElementById("import-data-file-meta");
+const cancelImportDataButton = document.getElementById("cancel-import-data");
 const printPreviewModal = document.getElementById("print-preview-modal");
 const printPreviewMeta = document.getElementById("print-preview-meta");
 const printPreviewImage = document.getElementById("print-preview-image");
@@ -447,6 +461,8 @@ let historyPreviewSnapshotUrl = "";
 let printSnapshotUrl = "";
 let activePreviewHistoryId = "";
 let pendingDeleteAction = null;
+let pendingImportPayload = null;
+let pendingImportFileName = "";
 
 blockNameInput?.closest("label")?.remove();
 if (blockCodeInput) {
@@ -458,26 +474,285 @@ if (blockCodeInput) {
     blockCodeInput.placeholder = "例如：KB5-2-30-45";
 }
 
-function persistState() {
-    const activeScrew = getActiveScrew();
-    const payload = {
-        projectName: state.projectName,
-        libraryCollapsed: state.libraryCollapsed,
-        sleevesVisible: state.sleevesVisible,
-        blocks: state.blocks,
-        layout: state.layout,
-        history: state.history,
-        screws: state.screws,
-        activeScrewId: state.activeScrewId,
-        activeHistoryId: state.activeHistoryId,
-        insertAnimationMs: state.insertAnimationMs,
-        deleteAnimationStyle: state.deleteAnimationStyle,
-        lengthScale: state.lengthScale,
-        printOptions: state.printOptions,
+function createPersistedPayload(source = state) {
+    const activeScrew = source.screws.find((screw) => screw.id === source.activeScrewId) || source.screws[0] || null;
+    return {
+        projectName: source.projectName,
+        libraryCollapsed: source.libraryCollapsed,
+        sleevesVisible: source.sleevesVisible,
+        blocks: source.blocks,
+        layout: source.layout,
+        history: source.history,
+        screws: source.screws,
+        activeScrewId: source.activeScrewId,
+        activeHistoryId: source.activeHistoryId,
+        insertAnimationMs: source.insertAnimationMs,
+        deleteAnimationStyle: source.deleteAnimationStyle,
+        lengthScale: source.lengthScale,
+        printOptions: source.printOptions,
         lineName: activeScrew?.name || DEFAULT_LINE_NAME,
         lineLength: activeScrew?.length || DEFAULT_LINE_LENGTH
     };
+}
+
+function persistState() {
+    const payload = createPersistedPayload();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function normalizeImportedBlock(block) {
+    if (!block || typeof block !== "object") {
+        return null;
+    }
+    const type = typeLabels[block.type] ? block.type : "conveying";
+    const code = typeof block.code === "string" && block.code.trim() ? block.code.trim() : "未命名模块";
+    const length = Number(block.length);
+    const quantity = Number(block.quantity);
+    return {
+        id: nextId("block"),
+        code,
+        length: Number.isFinite(length) && length > 0 ? length : SLOT_BASE_MM,
+        quantity: Number.isFinite(quantity) && quantity >= 0 ? Math.floor(quantity) : 1,
+        type,
+        patternStyle: patternStyleLabels[block.patternStyle] ? block.patternStyle : (defaultPatternStyleByType[type] || defaultPatternStyleByType.conveying),
+        color: normalizeBlockColor(block.color, type),
+        description: typeof block.description === "string" ? block.description : ""
+    };
+}
+
+function remapImportedLayout(layout, blockIdMap) {
+    if (!Array.isArray(layout)) {
+        return [];
+    }
+    return layout
+        .map((item) => ({
+            id: nextId("slot"),
+            blockId: typeof item?.blockId === "string" ? blockIdMap.get(item.blockId) : ""
+        }))
+        .filter((item) => item.blockId);
+}
+
+function normalizeImportedScrew(screw, blockIdMap) {
+    if (!screw || typeof screw !== "object") {
+        return null;
+    }
+    const name = typeof screw.name === "string" && screw.name.trim() ? screw.name.trim() : DEFAULT_LINE_NAME;
+    const length = Number(screw.length);
+    const headLength = Number(screw.headLength);
+    return {
+        id: nextId("screw"),
+        name,
+        length: Number.isFinite(length) && length > 0 ? length : DEFAULT_LINE_LENGTH,
+        headLength: Number.isFinite(headLength) && headLength > 0 ? headLength : DEFAULT_HEAD_LENGTH,
+        leadSleeveName: normalizeLeadSleeveName(screw.leadSleeveName),
+        sleeves: normalizeSleeves(screw.sleeves),
+        exhaustChannels: normalizeExhaustChannels(screw.exhaustChannels),
+        defaultLayout: remapImportedLayout(screw.defaultLayout, blockIdMap)
+    };
+}
+
+function normalizeImportedHistory(historyRecord, blockIdMap, screwIdMap) {
+    if (!historyRecord || typeof historyRecord !== "object") {
+        return null;
+    }
+    const screwId = typeof historyRecord.screwId === "string" ? screwIdMap.get(historyRecord.screwId) || "" : "";
+    return normalizeHistoryRecord({
+        id: nextId("history"),
+        name: historyRecord.name,
+        note: historyRecord.note,
+        savedAt: historyRecord.savedAt,
+        screwId,
+        screwName: typeof historyRecord.screwName === "string" && historyRecord.screwName.trim()
+            ? historyRecord.screwName.trim()
+            : "",
+        layout: remapImportedLayout(historyRecord.layout, blockIdMap)
+    });
+}
+
+function normalizeImportedDeleteAnimationStyle(style) {
+    return ["collapse", "slide-right", "fade-scale"].includes(style) ? style : DEFAULT_DELETE_ANIMATION_STYLE;
+}
+
+function extractImportPayload(rawData) {
+    if (!rawData || typeof rawData !== "object") {
+        return null;
+    }
+    if (rawData.kind === BACKUP_FILE_KIND && rawData.payload && typeof rawData.payload === "object") {
+        return rawData.payload;
+    }
+    if (rawData.payload && typeof rawData.payload === "object") {
+        return rawData.payload;
+    }
+    if (Array.isArray(rawData.blocks) || Array.isArray(rawData.screws) || Array.isArray(rawData.history)) {
+        return rawData;
+    }
+    return null;
+}
+
+function buildImportSummary(payload) {
+    const blockCount = Array.isArray(payload?.blocks) ? payload.blocks.length : 0;
+    const screwCount = Array.isArray(payload?.screws) ? payload.screws.length : 0;
+    const historyCount = Array.isArray(payload?.history) ? payload.history.length : 0;
+    return `包含 ${screwCount} 条螺杆、${blockCount} 个模块、${historyCount} 条历史方案。`;
+}
+
+function buildImportedSnapshot(payload, mode = "overwrite") {
+    const sourceBlocks = Array.isArray(payload?.blocks) ? payload.blocks : [];
+    const blockIdMap = new Map();
+    const importedBlocks = sourceBlocks
+        .map((block) => {
+            const normalized = normalizeImportedBlock(block);
+            if (!normalized) {
+                return null;
+            }
+            if (typeof block?.id === "string") {
+                blockIdMap.set(block.id, normalized.id);
+            }
+            return normalized;
+        })
+        .filter(Boolean);
+
+    const sourceScrews = Array.isArray(payload?.screws) ? payload.screws : [];
+    const screwIdMap = new Map();
+    const importedScrews = sourceScrews
+        .map((screw) => {
+            const normalized = normalizeImportedScrew(screw, blockIdMap);
+            if (!normalized) {
+                return null;
+            }
+            if (typeof screw?.id === "string") {
+                screwIdMap.set(screw.id, normalized.id);
+            }
+            return normalized;
+        })
+        .filter(Boolean);
+
+    const historyIdMap = new Map();
+    const importedHistory = (Array.isArray(payload?.history) ? payload.history : [])
+        .map((record) => {
+            const normalized = normalizeImportedHistory(record, blockIdMap, screwIdMap);
+            if (normalized && typeof record?.id === "string") {
+                historyIdMap.set(record.id, normalized.id);
+            }
+            return normalized;
+        })
+        .filter(Boolean);
+
+    if (mode === "append") {
+        return {
+            projectName: state.projectName,
+            libraryCollapsed: state.libraryCollapsed,
+            sleevesVisible: state.sleevesVisible,
+            blocks: state.blocks.concat(importedBlocks),
+            layout: state.layout.map((item) => ({ ...item })),
+            history: state.history.concat(importedHistory),
+            screws: state.screws.concat(importedScrews),
+            activeScrewId: state.activeScrewId,
+            editingScrewId: state.editingScrewId,
+            activeHistoryId: state.activeHistoryId,
+            insertAnimationMs: state.insertAnimationMs,
+            deleteAnimationStyle: state.deleteAnimationStyle,
+            lengthScale: state.lengthScale,
+            printOptions: { ...state.printOptions }
+        };
+    }
+
+    const screws = importedScrews.length ? importedScrews : [createDefaultScrew()];
+    const activeScrewId = (typeof payload?.activeScrewId === "string" && screwIdMap.get(payload.activeScrewId)) || screws[0].id;
+    const activeHistoryId = (typeof payload?.activeHistoryId === "string" && historyIdMap.get(payload.activeHistoryId)) || "";
+    return {
+        projectName: typeof payload?.projectName === "string" && payload.projectName.trim() ? payload.projectName.trim() : DEFAULT_PROJECT_NAME,
+        libraryCollapsed: Boolean(payload?.libraryCollapsed),
+        sleevesVisible: payload?.sleevesVisible !== false,
+        blocks: importedBlocks,
+        layout: remapImportedLayout(payload?.layout, blockIdMap),
+        history: importedHistory,
+        screws,
+        activeScrewId,
+        editingScrewId: activeScrewId,
+        activeHistoryId,
+        insertAnimationMs: Number.isFinite(Number(payload?.insertAnimationMs)) && Number(payload.insertAnimationMs) >= 0
+            ? Number(payload.insertAnimationMs)
+            : DEFAULT_INSERT_ANIMATION_MS,
+        deleteAnimationStyle: normalizeImportedDeleteAnimationStyle(payload?.deleteAnimationStyle),
+        lengthScale: Number.isFinite(Number(payload?.lengthScale)) && Number(payload.lengthScale) > 0
+            ? Number(payload.lengthScale)
+            : DEFAULT_LENGTH_SCALE,
+        printOptions: {
+            currentLayout: payload?.printOptions?.currentLayout ?? DEFAULT_PRINT_OPTIONS.currentLayout,
+            blockCount: payload?.printOptions?.blockCount ?? DEFAULT_PRINT_OPTIONS.blockCount,
+            screwLength: payload?.printOptions?.screwLength ?? DEFAULT_PRINT_OPTIONS.screwLength
+        }
+    };
+}
+
+function applyImportedSnapshot(snapshot) {
+    state.projectName = snapshot.projectName;
+    state.libraryCollapsed = snapshot.libraryCollapsed;
+    state.sleevesVisible = snapshot.sleevesVisible;
+    state.blocks = snapshot.blocks;
+    state.layout = snapshot.layout;
+    state.history = snapshot.history;
+    state.screws = snapshot.screws.length ? snapshot.screws : [createDefaultScrew()];
+    state.activeScrewId = state.screws.some((screw) => screw.id === snapshot.activeScrewId) ? snapshot.activeScrewId : state.screws[0].id;
+    state.editingScrewId = state.screws.some((screw) => screw.id === snapshot.editingScrewId) ? snapshot.editingScrewId : state.activeScrewId;
+    state.activeHistoryId = state.history.some((record) => record.id === snapshot.activeHistoryId) ? snapshot.activeHistoryId : "";
+    state.insertAnimationMs = snapshot.insertAnimationMs;
+    state.deleteAnimationStyle = snapshot.deleteAnimationStyle;
+    state.lengthScale = snapshot.lengthScale;
+    state.printOptions = { ...snapshot.printOptions };
+    state.selectedLibraryBlockId = null;
+    state.selectedBlockId = null;
+    state.libraryDragBlockId = null;
+    state.slotDrag = null;
+    state.pendingSlotDrag = null;
+    state.slotInsertIndex = null;
+    persistState();
+    populateBlockForm(null);
+    populateScrewSettingsForm(getScrewById(state.editingScrewId));
+    renderAll();
+}
+
+function getBackupFileName() {
+    const safeProjectName = (state.projectName || DEFAULT_PROJECT_NAME).replace(/[\\/:*?"<>|]/g, "-");
+    const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    return `${safeProjectName}-backup-${date}.json`;
+}
+
+function downloadTextFile(fileName, content, type = "application/json;charset=utf-8") {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function openImportDataModal() {
+    if (!importDataModal) {
+        return;
+    }
+    importDataModal.hidden = false;
+}
+
+function closeImportDataModal() {
+    if (importDataModal) {
+        importDataModal.hidden = true;
+    }
+    pendingImportPayload = null;
+    pendingImportFileName = "";
+    if (importDataFileName) {
+        importDataFileName.textContent = "未选择文件";
+    }
+    if (importDataFileMeta) {
+        importDataFileMeta.textContent = "请选择导出的项目备份文件。";
+    }
+    if (projectDataFileInput) {
+        projectDataFileInput.value = "";
+    }
 }
 
 function updateProjectTitle() {
@@ -653,12 +928,20 @@ function hexToRgba(hex, alpha) {
 function getModuleBackground(block) {
     const color = getBlockColor(block);
     switch (getBlockPatternStyle(block)) {
+        case "fine-diagonal":
+            return `repeating-linear-gradient(135deg, ${hexToRgba(color, 0.14)} 0 3px, ${hexToRgba(color, 0.66)} 3px 6px)`;
         case "vertical":
             return `repeating-linear-gradient(90deg, ${hexToRgba(color, 0.18)} 0 4px, ${hexToRgba(color, 0.58)} 4px 8px)`;
         case "reverse-diagonal":
             return `repeating-linear-gradient(45deg, ${hexToRgba(color, 0.24)} 0 5px, ${hexToRgba(color, 0.62)} 5px 10px)`;
         case "mixed":
             return `repeating-linear-gradient(135deg, ${hexToRgba(color, 0.2)} 0 5px, ${hexToRgba(color, 0.58)} 5px 9px, rgba(255, 255, 255, 0.45) 9px 12px)`;
+        case "cross":
+            return `linear-gradient(180deg, ${hexToRgba(color, 0.14)}, ${hexToRgba(color, 0.3)}), repeating-linear-gradient(135deg, ${hexToRgba(color, 0.58)} 0 4px, transparent 4px 9px), repeating-linear-gradient(45deg, ${hexToRgba(color, 0.48)} 0 4px, transparent 4px 9px)`;
+        case "grid":
+            return `linear-gradient(180deg, ${hexToRgba(color, 0.14)}, ${hexToRgba(color, 0.24)}), repeating-linear-gradient(90deg, ${hexToRgba(color, 0.54)} 0 2px, transparent 2px 9px), repeating-linear-gradient(0deg, ${hexToRgba(color, 0.42)} 0 2px, transparent 2px 9px)`;
+        case "banded":
+            return `repeating-linear-gradient(135deg, ${hexToRgba(color, 0.16)} 0 9px, ${hexToRgba(color, 0.64)} 9px 18px)`;
         case "solid":
             return `linear-gradient(180deg, ${hexToRgba(color, 0.2)}, ${hexToRgba(color, 0.68)})`;
         case "diagonal":
@@ -2650,6 +2933,16 @@ confirmDeleteModal?.addEventListener("click", (event) => {
     }
 });
 
+cancelImportDataButton?.addEventListener("click", () => {
+    closeImportDataModal();
+});
+
+importDataModal?.addEventListener("click", (event) => {
+    if (event.target === importDataModal) {
+        closeImportDataModal();
+    }
+});
+
 printPreviewModal?.addEventListener("click", (event) => {
     if (event.target === printPreviewModal) {
         closePrintPreviewModal();
@@ -2710,6 +3003,68 @@ systemSettingsForm?.addEventListener("submit", (event) => {
     persistState();
     renderAll();
     showToast("系统参数已保存。");
+});
+
+exportProjectDataButton?.addEventListener("click", () => {
+    const backup = {
+        kind: BACKUP_FILE_KIND,
+        version: BACKUP_FILE_VERSION,
+        exportedAt: new Date().toISOString(),
+        payload: createPersistedPayload()
+    };
+    downloadTextFile(getBackupFileName(), JSON.stringify(backup, null, 2));
+    showToast("项目数据已导出。");
+});
+
+importProjectDataButton?.addEventListener("click", () => {
+    if (projectDataFileInput) {
+        projectDataFileInput.value = "";
+    }
+    projectDataFileInput?.click();
+});
+
+projectDataFileInput?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+        return;
+    }
+    try {
+        const text = await file.text();
+        const rawData = JSON.parse(text);
+        const payload = extractImportPayload(rawData);
+        if (!payload) {
+            event.target.value = "";
+            showToast("备份文件格式无法识别，请重新选择。");
+            return;
+        }
+        pendingImportPayload = payload;
+        pendingImportFileName = file.name;
+        if (importDataFileName) {
+            importDataFileName.textContent = file.name;
+        }
+        if (importDataFileMeta) {
+            importDataFileMeta.textContent = buildImportSummary(payload);
+        }
+        openImportDataModal();
+    } catch (error) {
+        console.warn("Failed to import backup:", error);
+        event.target.value = "";
+        showToast("备份文件读取失败，请确认是有效的 JSON 文件。");
+    }
+});
+
+importDataForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!pendingImportPayload) {
+        showToast("请先选择要导入的备份文件。");
+        return;
+    }
+    const mode = document.querySelector('input[name="import-data-mode"]:checked')?.value === "append" ? "append" : "overwrite";
+    const snapshot = buildImportedSnapshot(pendingImportPayload, mode);
+    applyImportedSnapshot(snapshot);
+    closeImportDataModal();
+    switchPage("system-settings");
+    showToast(mode === "append" ? "备份数据已追加到当前项目。" : "备份数据已覆盖导入。");
 });
 
 resetLayoutButton.addEventListener("click", () => {

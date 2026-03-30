@@ -98,87 +98,105 @@
                             <h3>系统参数设置</h3>
                         </div>
                     </div>
-                    <form id="system-settings-form" class="settings-form">
-                        <div class="system-settings-layout">
-                            <section class="system-settings-panel">
-                                <div class="settings-subtitle-row">
-                                    <span class="settings-subtitle">基础参数</span>
-                                </div>
-                                <div class="system-settings-fields">
-                                    <label>
-                                        <span>项目名称</span>
-                                        <input id="system-project-name" type="text" maxlength="40" placeholder="广俊螺杆库">
-                                    </label>
-                                    <label>
-                                        <span>默认长度映射值</span>
-                                        <input id="system-length-scale" type="number" min="10" max="200" step="1" placeholder="40">
-                                    </label>
-                                    <label>
-                                        <span>首页螺纹块插入动画时间 ms</span>
-                                        <input id="system-insert-duration" type="number" min="0" max="3000" step="50" placeholder="500">
-                                    </label>
-                                </div>
-                            </section>
+                    <div class="system-settings-shell">
+                        <form id="system-settings-form" class="settings-form system-settings-main">
+                            <div class="system-settings-layout">
+                                <section class="system-settings-panel">
+                                    <div class="settings-subtitle-row">
+                                        <span class="settings-subtitle">基础参数</span>
+                                    </div>
+                                    <div class="system-settings-fields">
+                                        <label>
+                                            <span>项目名称</span>
+                                            <input id="system-project-name" type="text" maxlength="40" placeholder="广俊螺杆库">
+                                        </label>
+                                        <label>
+                                            <span>默认长度映射值</span>
+                                            <input id="system-length-scale" type="number" min="10" max="200" step="1" placeholder="40">
+                                        </label>
+                                        <label>
+                                            <span>首页螺纹块插入动画时间 ms</span>
+                                            <input id="system-insert-duration" type="number" min="0" max="3000" step="50" placeholder="500">
+                                        </label>
+                                    </div>
+                                </section>
 
-                            <section class="system-settings-panel">
-                                <div class="settings-subtitle-row">
-                                    <span class="settings-subtitle">删除动画样式</span>
-                                </div>
-                                <div class="system-choice-group">
-                                    <label class="system-choice-card">
-                                        <input type="radio" name="system-delete-animation" value="collapse">
-                                        <span class="system-choice-title">上下坍塌</span>
-                                        <span class="system-choice-copy">删除后向内收起</span>
-                                    </label>
-                                    <label class="system-choice-card">
-                                        <input type="radio" name="system-delete-animation" value="slide-right">
-                                        <span class="system-choice-title">右滑淡出</span>
-                                        <span class="system-choice-copy">向右滑出后消失</span>
-                                    </label>
-                                    <label class="system-choice-card">
-                                        <input type="radio" name="system-delete-animation" value="fade-scale">
-                                        <span class="system-choice-title">渐隐缩小</span>
-                                        <span class="system-choice-copy">缩小并淡出</span>
-                                    </label>
-                                </div>
-                            </section>
+                                <section class="system-settings-panel">
+                                    <div class="settings-subtitle-row">
+                                        <span class="settings-subtitle">删除动画样式</span>
+                                    </div>
+                                    <div class="system-choice-group">
+                                        <label class="system-choice-card">
+                                            <input type="radio" name="system-delete-animation" value="collapse">
+                                            <span class="system-choice-title">上下坍塌</span>
+                                            <span class="system-choice-copy">删除后向内收起</span>
+                                        </label>
+                                        <label class="system-choice-card">
+                                            <input type="radio" name="system-delete-animation" value="slide-right">
+                                            <span class="system-choice-title">右滑淡出</span>
+                                            <span class="system-choice-copy">向右滑出后消失</span>
+                                        </label>
+                                        <label class="system-choice-card">
+                                            <input type="radio" name="system-delete-animation" value="fade-scale">
+                                            <span class="system-choice-title">渐隐缩小</span>
+                                            <span class="system-choice-copy">缩小并淡出</span>
+                                        </label>
+                                    </div>
+                                </section>
 
-                            <section class="system-settings-panel">
-                                <div class="settings-subtitle-row">
-                                    <span class="settings-subtitle">打印携带参数</span>
-                                </div>
-                                <div class="system-toggle-grid">
-                                    <label class="system-toggle-card">
-                                        <input id="system-print-current-layout" type="checkbox" checked>
-                                        <span class="system-toggle-copy">
-                                            <span class="system-toggle-title">当前方案</span>
-                                            <span class="system-toggle-note">打印页显示当前绑定方案名称</span>
-                                        </span>
-                                        <span class="system-toggle-indicator" aria-hidden="true"></span>
-                                    </label>
-                                    <label class="system-toggle-card">
-                                        <input id="system-print-block-count" type="checkbox" checked>
-                                        <span class="system-toggle-copy">
-                                            <span class="system-toggle-title">螺纹块数量</span>
-                                            <span class="system-toggle-note">打印页显示当前排布数量统计</span>
-                                        </span>
-                                        <span class="system-toggle-indicator" aria-hidden="true"></span>
-                                    </label>
-                                    <label class="system-toggle-card">
-                                        <input id="system-print-screw-length" type="checkbox" checked>
-                                        <span class="system-toggle-copy">
-                                            <span class="system-toggle-title">螺杆长度</span>
-                                            <span class="system-toggle-note">打印页显示当前螺杆有效长度</span>
-                                        </span>
-                                        <span class="system-toggle-indicator" aria-hidden="true"></span>
-                                    </label>
+                                <section class="system-settings-panel">
+                                    <div class="settings-subtitle-row">
+                                        <span class="settings-subtitle">打印携带参数</span>
+                                    </div>
+                                    <div class="system-toggle-grid">
+                                        <label class="system-toggle-card">
+                                            <input id="system-print-current-layout" type="checkbox" checked>
+                                            <span class="system-toggle-copy">
+                                                <span class="system-toggle-title">当前方案</span>
+                                                <span class="system-toggle-note">打印页显示当前绑定方案名称</span>
+                                            </span>
+                                            <span class="system-toggle-indicator" aria-hidden="true"></span>
+                                        </label>
+                                        <label class="system-toggle-card">
+                                            <input id="system-print-block-count" type="checkbox" checked>
+                                            <span class="system-toggle-copy">
+                                                <span class="system-toggle-title">螺纹块数量</span>
+                                                <span class="system-toggle-note">打印页显示当前排布数量统计</span>
+                                            </span>
+                                            <span class="system-toggle-indicator" aria-hidden="true"></span>
+                                        </label>
+                                        <label class="system-toggle-card">
+                                            <input id="system-print-screw-length" type="checkbox" checked>
+                                            <span class="system-toggle-copy">
+                                                <span class="system-toggle-title">螺杆长度</span>
+                                                <span class="system-toggle-note">打印页显示当前螺杆有效长度</span>
+                                            </span>
+                                            <span class="system-toggle-indicator" aria-hidden="true"></span>
+                                        </label>
+                                    </div>
+                                </section>
+
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn" type="submit">保存系统参数</button>
+                            </div>
+                        </form>
+
+                        <aside class="system-settings-aside" aria-label="系统设置说明">
+                            <section class="system-settings-aside-card">
+                                <span class="system-settings-aside-label">数据迁移</span>
+                                <h4>导出完整项目，导入到新环境部署</h4>
+                                <p>这里会打包当前项目的螺杆、模块、排布、历史方案与系统设置。导入时可选择覆盖当前项目，或在现有基础上追加。</p>
+                                <div class="system-migration-panel">
+                                    <div class="system-migration-actions">
+                                        <button id="export-project-data" class="btn" type="button">一键导出数据</button>
+                                        <button id="import-project-data" class="btn ghost" type="button">导入备份数据</button>
+                                    </div>
+                                    <input id="project-data-file" type="file" accept="application/json,.json" hidden>
                                 </div>
                             </section>
-                        </div>
-                        <div class="form-actions">
-                            <button class="btn" type="submit">保存系统参数</button>
-                        </div>
-                    </form>
+                        </aside>
+                    </div>
                 </section>
             </section>
 
@@ -210,14 +228,16 @@
                                 <span>螺杆名称 / 类型</span>
                                 <input id="screw-name" type="text" maxlength="40" placeholder="例如：A线">
                             </label>
-                            <label>
-                                <span>螺杆长度 mm</span>
-                                <input id="screw-length" type="number" min="10" step="10" placeholder="480">
-                            </label>
-                            <label>
-                                <span>螺杆头长度 mm</span>
-                                <input id="screw-head-length" type="number" min="10" step="1" placeholder="60">
-                            </label>
+                            <div class="settings-inline-fields">
+                                <label>
+                                    <span>螺杆长度 mm</span>
+                                    <input id="screw-length" type="number" min="10" step="10" placeholder="480">
+                                </label>
+                                <label>
+                                    <span>螺杆头长度 mm</span>
+                                    <input id="screw-head-length" type="number" min="10" step="1" placeholder="60">
+                                </label>
+                            </div>
                             <label>
                                 <span>前置小套筒名称</span>
                                 <input id="lead-sleeve-name" type="text" maxlength="40" placeholder="Zwischenflansch">
@@ -292,9 +312,13 @@
                                     <span>螺纹样式</span>
                                     <select id="block-pattern-style">
                                         <option value="diagonal">斜纹</option>
+                                        <option value="fine-diagonal">细斜纹</option>
                                         <option value="vertical">竖纹</option>
                                         <option value="reverse-diagonal">反斜纹</option>
                                         <option value="mixed">混合纹</option>
+                                        <option value="cross">交叉纹</option>
+                                        <option value="grid">网格纹</option>
+                                        <option value="banded">宽带纹</option>
                                         <option value="solid">纯色</option>
                                     </select>
                                 </label>
@@ -403,6 +427,38 @@
                 <button id="cancel-delete" class="btn ghost" type="button">取消</button>
                 <button id="confirm-delete" class="btn danger" type="button">确认删除</button>
             </div>
+        </div>
+    </div>
+
+    <div id="import-data-modal" class="modal-backdrop" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="import-data-title">
+            <div class="modal-heading">
+                <div>
+                    <p class="eyebrow">Import Backup</p>
+                    <h3 id="import-data-title">导入项目数据</h3>
+                </div>
+            </div>
+            <form id="import-data-form" class="modal-form">
+                <div class="save-mode-group">
+                    <label class="save-mode-option">
+                        <input id="import-mode-overwrite" type="radio" name="import-data-mode" value="overwrite" checked>
+                        <span>覆盖当前数据</span>
+                    </label>
+                    <label class="save-mode-option">
+                        <input id="import-mode-append" type="radio" name="import-data-mode" value="append">
+                        <span>追加到当前项目</span>
+                    </label>
+                </div>
+                <div class="import-data-summary">
+                    <span class="import-data-summary-label">已选择文件</span>
+                    <strong id="import-data-file-name">未选择文件</strong>
+                    <p id="import-data-file-meta" class="history-meta">请选择导出的项目备份文件。</p>
+                </div>
+                <div class="modal-actions">
+                    <button id="cancel-import-data" class="btn ghost" type="button">取消</button>
+                    <button class="btn" type="submit">确认导入</button>
+                </div>
+            </form>
         </div>
     </div>
 
