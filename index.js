@@ -1,8 +1,8 @@
 ﻿const STORAGE_KEY = "screw-layout-state-v1";
 const DEFAULT_LINE_NAME = "A线";
 const DEFAULT_PROJECT_NAME = "广俊螺杆库";
-const DEFAULT_LINE_LENGTH = 660;
-const DEFAULT_HEAD_LENGTH = 60;
+const DEFAULT_LINE_LENGTH = 2560;
+const DEFAULT_HEAD_LENGTH = 58;
 const SLEEVE_COUNT = 12;
 const LEAD_SLEEVE_LENGTH = 30;
 const DEFAULT_LEAD_SLEEVE_NAME = "Zwischenflansch";
@@ -113,23 +113,81 @@ const typeLabels = {
     mixing: "分散"
 };
 
+const screwElementImageOptions = [
+    {
+        value: "image:gfa-2-20-90",
+        label: "GFA_2_20_90",
+        src: "img/GFA_2_20_90.png",
+        family: "gfa"
+    },
+    {
+        value: "image:gff-2-40-90",
+        label: "GFF_2_40_90",
+        src: "img/GFF_2_40_90.png",
+        family: "gff"
+    },
+    {
+        value: "image:gfm-2-15-60",
+        label: "GFM_2_15_60",
+        src: "img/GFM_2_15_60.png",
+        family: "gfm"
+    }
+];
+
+const screwElementImageOptionByValue = new Map(
+    screwElementImageOptions.map((option) => [option.value, option])
+);
+
+function getDefaultImagePatternForFamily(family) {
+    const option = screwElementImageOptions.find((item) => item.family === family);
+    return option?.value || "";
+}
+
+function upgradeBlockImagePattern(block) {
+    if (!block || typeof block !== "object") {
+        return block;
+    }
+    const legacyImagePatternMap = {
+        gfa: getDefaultImagePatternForFamily("gfa"),
+        diagonal: getDefaultImagePatternForFamily("gfa"),
+        "fine-diagonal": getDefaultImagePatternForFamily("gfa"),
+        gff: getDefaultImagePatternForFamily("gff"),
+        banded: getDefaultImagePatternForFamily("gff"),
+        gfm: getDefaultImagePatternForFamily("gfm"),
+        mixed: getDefaultImagePatternForFamily("gfm"),
+        cross: getDefaultImagePatternForFamily("gfm")
+    };
+    const nextPatternStyle = legacyImagePatternMap[block.patternStyle] || block.patternStyle;
+    return {
+        ...block,
+        patternStyle: nextPatternStyle || block.patternStyle
+    };
+}
+
 const patternStyleLabels = {
-    diagonal: "斜纹",
-    "fine-diagonal": "细斜纹",
-    vertical: "竖纹",
-    "reverse-diagonal": "反斜纹",
-    mixed: "混合纹",
-    cross: "交叉纹",
-    grid: "网格纹",
-    banded: "宽带纹",
-    solid: "纯色"
+    ...Object.fromEntries(screwElementImageOptions.map((option) => [option.value, option.label])),
+    gfa: "GFA 输送螺纹",
+    gfm: "GFM 混合螺纹",
+    gff: "GFF 大容积螺纹",
+    ks: "KS 捏合盘",
+    kb: "KB 捏合块",
+    "kb-reverse": "KB 反向捏合块",
+    diagonal: "GFA 输送螺纹",
+    "fine-diagonal": "GFA 短导程输送",
+    vertical: "KB 捏合块",
+    "reverse-diagonal": "KB 反向捏合块",
+    mixed: "GFM 混合螺纹",
+    cross: "GFM 交错混合",
+    grid: "KS 捏合盘",
+    banded: "GFF 大容积螺纹",
+    solid: "KS 平直盘"
 };
 
 const defaultPatternStyleByType = {
-    conveying: "diagonal",
-    kneading: "vertical",
-    reverse: "reverse-diagonal",
-    mixing: "mixed"
+    conveying: "image:gfa-2-20-90",
+    kneading: "kb",
+    reverse: "kb-reverse",
+    mixing: "image:gfm-2-15-60"
 };
 
 const defaultColorByType = {
@@ -141,132 +199,199 @@ const defaultColorByType = {
 
 const defaultBlocks = [
     {
-        id: "block-gfa-2-30-120-a",
-        name: "输送块 120 / 输送",
-        code: "GFA-2-30-120-A",
-        length: 120,
+        id: "block-gfa-2-30-100-k",
+        name: "输送块 100 / GFA",
+        code: "GFA-2-30-100-K",
+        length: 100,
         type: "conveying",
-        description: "长输送段，用于前段稳定输送。",
+        patternStyle: "image:gfa-2-20-90",
+        color: "#8f9ba7",
+        description: "同向啮合输送元件，用于前段稳定输送与建压。",
         quantity: 1
     },
     {
         id: "block-gfa-2-60-30",
-        name: "输送块 30 / 输送",
+        name: "输送块 30 / GFA",
         code: "GFA-2-60-30",
         length: 30,
         type: "conveying",
-        description: "短输送模块，用于节距微调。",
-        quantity: 1
+        patternStyle: "image:gfa-2-20-90",
+        color: "#8f9ba7",
+        description: "短同向啮合输送元件，用于节距微调与段间过渡。",
+        quantity: 3
     },
     {
         id: "block-gfa-2-60-60",
-        name: "输送块 60 / 输送",
+        name: "输送块 60 / GFA",
         code: "GFA-2-60-60",
         length: 60,
         type: "conveying",
-        description: "标准输送段，适合常规送料与推进。",
-        quantity: 7
+        patternStyle: "image:gfa-2-20-90",
+        color: "#8f9ba7",
+        description: "标准同向啮合输送元件，适合常规送料与推进。",
+        quantity: 9
     },
     {
         id: "block-gfa-2-72-60",
-        name: "输送块 72 / 输送",
+        name: "输送块 60 / GFA",
         code: "GFA-2-72-60",
-        length: 72,
+        length: 60,
         type: "conveying",
-        description: "较长输送段，用于增强物料推进。",
-        quantity: 1
+        patternStyle: "image:gfa-2-20-90",
+        color: "#8f9ba7",
+        description: "较大导程输送元件，自由容积更高，适合连续稳定输送。",
+        quantity: 15
     },
     {
-        id: "block-gfa-2-80-60",
-        name: "输送块 80 / 输送",
-        code: "GFA-2-80-60",
-        length: 80,
-        type: "conveying",
-        description: "长输送模块，用于连续稳定输送。",
-        quantity: 22
-    },
-    {
-        id: "block-gff-2-80-180",
-        name: "保温块 180 / 特殊",
-        code: "GFF-2-80-180",
+        id: "block-gff-2-72-180",
+        name: "大自由容积块 180 / GFF",
+        code: "GFF-2-72-180",
         length: 180,
         type: "mixing",
-        description: "特殊长段模块，用于保温或功能扩展。",
+        patternStyle: "image:gff-2-40-90",
+        color: "#7f8b96",
+        description: "非自擦式高自由容积元件，用于增加可用容积与缓和输送。",
         quantity: 1
     },
     {
-        id: "block-gfm-2-30-60",
-        name: "混炼块 60 / 混炼",
-        code: "GFM-2-30-60",
-        length: 60,
+        id: "block-gfm-2-30-30",
+        name: "混炼输送块 30 / GFM",
+        code: "GFM-2-30-30",
+        length: 30,
         type: "mixing",
-        description: "短混炼段，用于基础分散与塑化。",
-        quantity: 2
+        patternStyle: "image:gfm-2-15-60",
+        color: "#a7b09a",
+        description: "同向混合输送元件，用于基础分散、均化和塑化。",
+        quantity: 4
     },
     {
         id: "block-gfm-2-45-30-l",
-        name: "混炼块 30 / 混炼",
+        name: "混炼输送块 30 / GFM",
         code: "GFM-2-45-30-L",
-        length: 45,
-        type: "mixing",
-        description: "混炼模块，适合中段分散与均化。",
-        quantity: 4
-    },
-    {
-        id: "block-gfm-2-60-30-l",
-        name: "混炼块 30 / 混炼",
-        code: "GFM-2-60-30-L",
         length: 30,
         type: "mixing",
-        description: "短混炼段，用于局部增强混炼。",
+        patternStyle: "image:gfm-2-15-60",
+        color: "#a7b09a",
+        description: "左向混合输送元件，适合中段分散与均化。",
         quantity: 4
     },
     {
-        id: "block-kb5-2-30-45",
-        name: "45° 捏合块 / 捏合",
-        code: "KB5-2-30-45",
+        id: "block-kb5-2-30-30-re",
+        name: "30° 捏合块 / KB5",
+        code: "KB5-2-30-30°-RE",
         length: 30,
         type: "kneading",
-        description: "强化塑化与分散，适合主熔融段。",
-        quantity: 30
-    },
-    {
-        id: "block-kb6-2-60-30-l",
-        name: "反向阻流块 / 反向",
-        code: "KB-6-2-60-30-L",
-        length: 30,
-        type: "reverse",
-        description: "左旋反向元件，用于建立压力与停留。",
-        quantity: 1
-    },
-    {
-        id: "block-kb6-2-60-30-r",
-        name: "反向阻流块 / 反向",
-        code: "KB-6-2-60-30-R",
-        length: 30,
-        type: "reverse",
-        description: "右旋反向元件，用于建立压力与停留。",
+        patternStyle: "kb",
+        color: "#cf7a37",
+        description: "5 片式 30° 右向捏合块，提供中等剪切与塑化。",
         quantity: 2
     },
     {
-        id: "block-kb6-2-60-45-re",
-        name: "反向阻流块 / 反向",
-        code: "KB6-2-60-45-RE",
-        length: 60,
-        type: "reverse",
-        description: "反向阻流段，用于增强回流与压力建立。",
-        quantity: 60
+        id: "block-kb5-2-30-45-re",
+        name: "45° 捏合块 / KB5",
+        code: "KB5-2-30-45°-RE",
+        length: 30,
+        type: "kneading",
+        patternStyle: "kb",
+        color: "#cf7a37",
+        description: "5 片式 45° 右向捏合块，强化塑化、分散与剪切。",
+        quantity: 6
     },
     {
-        id: "block-kb6-2-60-60-r",
-        name: "反向阻流块 / 反向",
-        code: "KB-6-2-60-60-R",
+        id: "block-kb6-2-60-30-li",
+        name: "30° 反向捏合块 / KB6",
+        code: "KB6-2-60-30°-LI",
+        length: 30,
+        type: "reverse",
+        patternStyle: "kb-reverse",
+        color: "#4a5560",
+        description: "6 片式 30° 左向反向元件，用于建立压力与延长停留。",
+        quantity: 1
+    },
+    {
+        id: "block-kb6-2-60-45-re",
+        name: "45° 反向捏合块 / KB6",
+        code: "KB6-2-60-45°-RE",
         length: 60,
         type: "reverse",
-        description: "长反向元件，用于高停留工况。",
-        quantity: 8
+        patternStyle: "kb-reverse",
+        color: "#4a5560",
+        description: "6 片式 45° 右向反向阻流元件，用于增强回流与压力建立。",
+        quantity: 4
     }
 ];
+
+const defaultArrangementBlockIds = [
+    "block-gfa-2-30-100-k",
+    "block-gff-2-72-180",
+    "block-gfa-2-72-60",
+    "block-gfa-2-60-60",
+    "block-kb5-2-30-30-re",
+    "block-kb5-2-30-45-re",
+    "block-kb5-2-30-45-re",
+    "block-gfa-2-60-60",
+    "block-kb5-2-30-45-re",
+    "block-kb5-2-30-45-re",
+    "block-kb6-2-60-30-li",
+    "block-gfa-2-60-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-60-30",
+    "block-kb6-2-60-45-re",
+    "block-kb6-2-60-45-re",
+    "block-kb6-2-60-45-re",
+    "block-gfa-2-72-60",
+    "block-kb5-2-30-30-re",
+    "block-kb5-2-30-45-re",
+    "block-gfm-2-30-30",
+    "block-gfm-2-30-30",
+    "block-gfm-2-45-30-l",
+    "block-gfa-2-60-30",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-60-60",
+    "block-kb6-2-60-45-re",
+    "block-gfm-2-30-30",
+    "block-gfm-2-45-30-l",
+    "block-gfm-2-45-30-l",
+    "block-gfa-2-60-60",
+    "block-gfa-2-60-30",
+    "block-kb5-2-30-45-re",
+    "block-gfm-2-30-30",
+    "block-gfm-2-45-30-l",
+    "block-gfa-2-60-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-72-60",
+    "block-gfa-2-60-60",
+    "block-gfa-2-60-60",
+    "block-gfa-2-60-60"
+];
+
+function createLayoutFromBlockIds(blockIds) {
+    return blockIds.map((blockId) => ({
+        id: nextId("slot"),
+        blockId
+    }));
+}
+
+function shouldUsePdfDefaultProject(snapshot) {
+    if (!snapshot || !Array.isArray(snapshot.blocks) || !snapshot.blocks.length) {
+        return true;
+    }
+    const codes = new Set(snapshot.blocks.map((block) => block?.code).filter(Boolean));
+    const hasCurrentPdfBlocks = defaultBlocks.every((block) => codes.has(block.code));
+    if (hasCurrentPdfBlocks) {
+        return false;
+    }
+    return ["GFA-2-30-120-A", "GFA-2-80-60", "KB5-2-30-45"].some((code) => codes.has(code));
+}
 
 function loadState() {
     try {
@@ -282,12 +407,19 @@ function loadState() {
 }
 
 const persisted = loadState();
-const initialBlocks = Array.isArray(persisted?.blocks) && persisted.blocks.length
+const usePdfDefaultProject = shouldUsePdfDefaultProject(persisted);
+const initialBlocks = (!usePdfDefaultProject && Array.isArray(persisted?.blocks) && persisted.blocks.length
     ? persisted.blocks
-    : structuredClone(defaultBlocks);
-const persistedActiveLayout = normalizeLayoutSnapshot(persisted?.layout, initialBlocks);
+    : structuredClone(defaultBlocks)).map(upgradeBlockImagePattern);
+const defaultArrangementLayout = normalizeLayoutSnapshot(
+    createLayoutFromBlockIds(defaultArrangementBlockIds),
+    initialBlocks
+);
+const persistedActiveLayout = usePdfDefaultProject
+    ? defaultArrangementLayout
+    : normalizeLayoutSnapshot(persisted?.layout, initialBlocks);
 const persistedActiveScrewId = typeof persisted?.activeScrewId === "string" ? persisted.activeScrewId : "";
-const initialScrews = Array.isArray(persisted?.screws) && persisted.screws.length
+const initialScrews = !usePdfDefaultProject && Array.isArray(persisted?.screws) && persisted.screws.length
     ? persisted.screws
         .filter((screw) => screw && typeof screw.name === "string" && Number.isFinite(Number(screw.length)))
         .map((screw) => ({
@@ -311,16 +443,21 @@ const initialScrews = Array.isArray(persisted?.screws) && persisted.screws.lengt
         }))
     : [createDefaultScrew(
         typeof persisted?.lineName === "string" && persisted.lineName ? persisted.lineName : DEFAULT_LINE_NAME,
-        Number.isFinite(persisted?.lineLength) ? persisted.lineLength : DEFAULT_LINE_LENGTH,
+        !usePdfDefaultProject && Number.isFinite(persisted?.lineLength) ? persisted.lineLength : DEFAULT_LINE_LENGTH,
         DEFAULT_HEAD_LENGTH,
         DEFAULT_LEAD_SLEEVE_NAME,
         createDefaultSleeves(),
         normalizeExhaustChannels(),
-        persistedActiveLayout
+        persistedActiveLayout.length ? persistedActiveLayout : defaultArrangementLayout
     )];
 const initialActiveScrewId = initialScrews.some((screw) => screw.id === persisted?.activeScrewId)
     ? persisted.activeScrewId
     : initialScrews[0].id;
+const initialActiveLayout = persistedActiveLayout.length
+    ? persistedActiveLayout
+    : (!persisted
+        ? normalizeLayoutSnapshot(initialScrews.find((screw) => screw.id === initialActiveScrewId)?.defaultLayout, initialBlocks)
+        : []);
 
 const state = {
     currentPage: "home",
@@ -332,12 +469,12 @@ const state = {
     blockSearch: "",
     historySearch: "",
     blocks: initialBlocks,
-    layout: persistedActiveLayout,
-    history: Array.isArray(persisted?.history) ? persisted.history.map(normalizeHistoryRecord).filter(Boolean) : [],
+    layout: initialActiveLayout,
+    history: !usePdfDefaultProject && Array.isArray(persisted?.history) ? persisted.history.map(normalizeHistoryRecord).filter(Boolean) : [],
     screws: initialScrews,
     activeScrewId: initialActiveScrewId,
     editingScrewId: initialActiveScrewId,
-    activeHistoryId: Array.isArray(persisted?.history) && persisted.history.some((record) => record?.id === persisted?.activeHistoryId)
+    activeHistoryId: !usePdfDefaultProject && Array.isArray(persisted?.history) && persisted.history.some((record) => record?.id === persisted?.activeHistoryId)
         ? persisted.activeHistoryId
         : "",
     insertAnimationMs: Number.isFinite(Number(persisted?.insertAnimationMs)) && Number(persisted.insertAnimationMs) >= 0
@@ -363,6 +500,10 @@ const state = {
     toastTimer: null,
     ignoreSlotClickUntil: 0
 };
+
+if (usePdfDefaultProject) {
+    persistState();
+}
 
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
 const pages = Array.from(document.querySelectorAll(".page"));
@@ -426,6 +567,15 @@ const blockColorInput = document.getElementById("block-color");
 const blockDescriptionInput = document.getElementById("block-description");
 const blockPreviewSlot = document.getElementById("block-preview-slot");
 const deleteCurrentBlockButton = document.getElementById("delete-current-block");
+const cutoutFileInput = document.getElementById("cutout-file");
+const cutoutSourceBox = document.getElementById("cutout-source-box");
+const cutoutSourcePreview = document.getElementById("cutout-source-preview");
+const cutoutCropOverlay = document.getElementById("cutout-crop-overlay");
+const cutoutResultCanvas = document.getElementById("cutout-result-canvas");
+const cutoutDownloadButton = document.getElementById("cutout-download");
+const cutoutAutoCropButton = document.getElementById("cutout-auto-crop");
+const cutoutResetCropButton = document.getElementById("cutout-reset-crop");
+const cutoutStatus = document.getElementById("cutout-status");
 const historyList = document.getElementById("history-list");
 const saveLayoutModal = document.getElementById("save-layout-modal");
 const saveLayoutForm = document.getElementById("save-layout-form");
@@ -473,6 +623,12 @@ let activePreviewHistoryId = "";
 let pendingDeleteAction = null;
 let pendingImportPayload = null;
 let pendingImportFileName = "";
+let cutoutSourceUrl = "";
+let cutoutResultUrl = "";
+let cutoutResultFileName = "cutout.png";
+let cutoutLoadedImage = null;
+let cutoutManualCrop = null;
+let cutoutCropDrag = null;
 
 blockNameInput?.closest("label")?.remove();
 if (blockCodeInput) {
@@ -741,6 +897,378 @@ function downloadTextFile(fileName, content, type = "application/json;charset=ut
     URL.revokeObjectURL(url);
 }
 
+function makeCutoutFileName(fileName = "cutout.png") {
+    const stem = fileName.replace(/\.[^.]+$/, "") || "cutout";
+    return `${stem}_cutout.png`;
+}
+
+function setCutoutStatus(message, isError = false) {
+    if (!cutoutStatus) {
+        return;
+    }
+    cutoutStatus.textContent = message;
+    cutoutStatus.classList.toggle("error", isError);
+}
+
+function loadCutoutImage(url) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("图片读取失败"));
+        image.src = url;
+    });
+}
+
+function findCutoutBounds(data, width, height) {
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+            const index = (y * width + x) * 4;
+            const alpha = data[index + 3];
+            const darkest = Math.min(data[index], data[index + 1], data[index + 2]);
+            if (alpha > 45 && darkest < 238) {
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+            }
+        }
+    }
+
+    if (maxX < minX || maxY < minY) {
+        return null;
+    }
+
+    return {
+        x: minX,
+        y: minY,
+        width: maxX - minX + 1,
+        height: maxY - minY + 1
+    };
+}
+
+function removeWhiteBackground(imageData) {
+    const { data } = imageData;
+    for (let index = 0; index < data.length; index += 4) {
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        const lightest = Math.max(red, green, blue);
+        const darkest = Math.min(red, green, blue);
+        const spread = lightest - darkest;
+
+        if (darkest >= 248 && spread <= 18) {
+            data[index + 3] = 0;
+        } else if (darkest >= 232 && spread <= 24) {
+            const fade = Math.max(0, Math.min(255, (248 - darkest) * 16));
+            data[index + 3] = Math.min(data[index + 3], fade);
+        }
+    }
+    return imageData;
+}
+
+function getCutoutImageRect() {
+    if (!cutoutSourcePreview || !cutoutSourcePreview.src) {
+        return null;
+    }
+    const rect = cutoutSourcePreview.getBoundingClientRect();
+    const boxRect = cutoutSourceBox?.getBoundingClientRect();
+    if (!rect.width || !rect.height || !boxRect) {
+        return null;
+    }
+    return { rect, boxRect };
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function getCutoutPoint(event) {
+    const imageRect = getCutoutImageRect();
+    if (!imageRect || !cutoutLoadedImage) {
+        return null;
+    }
+    const { rect } = imageRect;
+    const x = clamp(event.clientX - rect.left, 0, rect.width);
+    const y = clamp(event.clientY - rect.top, 0, rect.height);
+    return {
+        x: Math.round((x / rect.width) * cutoutLoadedImage.naturalWidth),
+        y: Math.round((y / rect.height) * cutoutLoadedImage.naturalHeight)
+    };
+}
+
+function updateCutoutCropOverlay() {
+    if (!cutoutCropOverlay) {
+        return;
+    }
+    const imageRect = getCutoutImageRect();
+    if (!imageRect || !cutoutLoadedImage || !cutoutManualCrop) {
+        cutoutCropOverlay.hidden = true;
+        return;
+    }
+    const { rect, boxRect } = imageRect;
+    const scaleX = rect.width / cutoutLoadedImage.naturalWidth;
+    const scaleY = rect.height / cutoutLoadedImage.naturalHeight;
+    cutoutCropOverlay.hidden = false;
+    cutoutCropOverlay.style.left = `${rect.left - boxRect.left + cutoutManualCrop.x * scaleX}px`;
+    cutoutCropOverlay.style.top = `${rect.top - boxRect.top + cutoutManualCrop.y * scaleY}px`;
+    cutoutCropOverlay.style.width = `${cutoutManualCrop.width * scaleX}px`;
+    cutoutCropOverlay.style.height = `${cutoutManualCrop.height * scaleY}px`;
+}
+
+function normalizeCutoutCrop(start, end) {
+    if (!cutoutLoadedImage || !start || !end) {
+        return null;
+    }
+    const x1 = clamp(Math.min(start.x, end.x), 0, cutoutLoadedImage.naturalWidth);
+    const y1 = clamp(Math.min(start.y, end.y), 0, cutoutLoadedImage.naturalHeight);
+    const x2 = clamp(Math.max(start.x, end.x), 0, cutoutLoadedImage.naturalWidth);
+    const y2 = clamp(Math.max(start.y, end.y), 0, cutoutLoadedImage.naturalHeight);
+    const width = Math.max(1, x2 - x1);
+    const height = Math.max(1, y2 - y1);
+    if (width < 8 || height < 8) {
+        return null;
+    }
+    return { x: x1, y: y1, width, height };
+}
+
+function setCutoutToolButtons(enabled) {
+    if (cutoutAutoCropButton) {
+        cutoutAutoCropButton.disabled = !enabled;
+    }
+    if (cutoutResetCropButton) {
+        cutoutResetCropButton.disabled = !enabled;
+    }
+}
+
+function processCutoutImage() {
+    if (!cutoutLoadedImage || !cutoutResultCanvas) {
+        return;
+    }
+
+    if (cutoutResultUrl) {
+        URL.revokeObjectURL(cutoutResultUrl);
+        cutoutResultUrl = "";
+    }
+    if (cutoutDownloadButton) {
+        cutoutDownloadButton.disabled = true;
+    }
+
+    const sourceBounds = cutoutManualCrop || {
+        x: 0,
+        y: 0,
+        width: cutoutLoadedImage.naturalWidth,
+        height: cutoutLoadedImage.naturalHeight
+    };
+    const workCanvas = document.createElement("canvas");
+    workCanvas.width = sourceBounds.width;
+    workCanvas.height = sourceBounds.height;
+    const workContext = workCanvas.getContext("2d", { willReadFrequently: true });
+    workContext.drawImage(
+        cutoutLoadedImage,
+        sourceBounds.x,
+        sourceBounds.y,
+        sourceBounds.width,
+        sourceBounds.height,
+        0,
+        0,
+        sourceBounds.width,
+        sourceBounds.height
+    );
+
+    const imageData = removeWhiteBackground(workContext.getImageData(0, 0, workCanvas.width, workCanvas.height));
+    const bounds = cutoutManualCrop
+        ? { x: 0, y: 0, width: workCanvas.width, height: workCanvas.height }
+        : findCutoutBounds(imageData.data, workCanvas.width, workCanvas.height) || {
+            x: 0,
+            y: 0,
+            width: workCanvas.width,
+            height: workCanvas.height
+        };
+    workContext.putImageData(imageData, 0, 0);
+
+    cutoutResultCanvas.width = bounds.width;
+    cutoutResultCanvas.height = bounds.height;
+    const resultContext = cutoutResultCanvas.getContext("2d");
+    resultContext.clearRect(0, 0, bounds.width, bounds.height);
+    resultContext.drawImage(
+        workCanvas,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
+        0,
+        0,
+        bounds.width,
+        bounds.height
+    );
+
+    cutoutResultCanvas.toBlob((blob) => {
+        if (!blob) {
+            setCutoutStatus("处理完成，但 PNG 生成失败。", true);
+            return;
+        }
+        cutoutResultUrl = URL.createObjectURL(blob);
+        if (cutoutDownloadButton) {
+            cutoutDownloadButton.disabled = false;
+        }
+        const mode = cutoutManualCrop ? "手动裁剪" : "自动裁剪";
+        setCutoutStatus(`${mode}完成：${bounds.width} x ${bounds.height}px，已去掉白色背景。`);
+    }, "image/png");
+}
+
+async function handleCutoutFile(file) {
+    if (!file) {
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+        setCutoutStatus("请选择 PNG、JPG 或 WebP 图片。", true);
+        return;
+    }
+
+    if (cutoutSourceUrl) {
+        URL.revokeObjectURL(cutoutSourceUrl);
+    }
+    if (cutoutResultUrl) {
+        URL.revokeObjectURL(cutoutResultUrl);
+        cutoutResultUrl = "";
+    }
+    if (cutoutDownloadButton) {
+        cutoutDownloadButton.disabled = true;
+    }
+
+    cutoutSourceUrl = URL.createObjectURL(file);
+    cutoutResultFileName = makeCutoutFileName(file.name);
+    cutoutLoadedImage = null;
+    cutoutManualCrop = null;
+    cutoutCropDrag = null;
+    setCutoutToolButtons(false);
+    updateCutoutCropOverlay();
+    if (cutoutSourcePreview) {
+        cutoutSourcePreview.src = cutoutSourceUrl;
+    }
+    cutoutSourceBox?.classList.add("has-image");
+    setCutoutStatus("正在读取图片并自动扣图...");
+
+    try {
+        cutoutLoadedImage = await loadCutoutImage(cutoutSourceUrl);
+        setCutoutToolButtons(true);
+        processCutoutImage();
+    } catch (error) {
+        setCutoutStatus(error.message || "图片处理失败，请换一张图片再试。", true);
+    }
+}
+
+async function handleCutoutFileChange(event) {
+    await handleCutoutFile(event.target.files?.[0]);
+    event.target.value = "";
+}
+
+function downloadCutoutResult() {
+    if (!cutoutResultUrl) {
+        return;
+    }
+    const link = document.createElement("a");
+    link.href = cutoutResultUrl;
+    link.download = cutoutResultFileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+function handleCutoutDragOver(event) {
+    event.preventDefault();
+    cutoutSourceBox?.classList.add("drag-over");
+}
+
+function handleCutoutDragLeave(event) {
+    if (event.currentTarget === event.target || !event.currentTarget.contains(event.relatedTarget)) {
+        cutoutSourceBox?.classList.remove("drag-over");
+    }
+}
+
+function handleCutoutDrop(event) {
+    event.preventDefault();
+    cutoutSourceBox?.classList.remove("drag-over");
+    const file = Array.from(event.dataTransfer?.files || []).find((item) => item.type.startsWith("image/"));
+    if (!file) {
+        setCutoutStatus("拖入的文件不是图片，请使用 PNG、JPG 或 WebP。", true);
+        return;
+    }
+    handleCutoutFile(file);
+}
+
+function handleCutoutCropStart(event) {
+    if (!cutoutLoadedImage || event.button !== 0 || event.target === cutoutFileInput) {
+        return;
+    }
+    const point = getCutoutPoint(event);
+    if (!point) {
+        return;
+    }
+    event.preventDefault();
+    cutoutCropDrag = { start: point, end: point };
+    cutoutManualCrop = null;
+    cutoutSourceBox?.setPointerCapture?.(event.pointerId);
+    updateCutoutCropOverlay();
+}
+
+function handleCutoutSourceClick(event) {
+    if (cutoutLoadedImage && event.target !== cutoutSourceBox) {
+        return;
+    }
+    cutoutFileInput?.click();
+}
+
+function handleCutoutSourceKeydown(event) {
+    if (event.key !== "Enter" && event.key !== " ") {
+        return;
+    }
+    event.preventDefault();
+    cutoutFileInput?.click();
+}
+
+function handleCutoutCropMove(event) {
+    if (!cutoutCropDrag) {
+        return;
+    }
+    const point = getCutoutPoint(event);
+    if (!point) {
+        return;
+    }
+    cutoutCropDrag.end = point;
+    cutoutManualCrop = normalizeCutoutCrop(cutoutCropDrag.start, cutoutCropDrag.end);
+    updateCutoutCropOverlay();
+}
+
+function handleCutoutCropEnd(event) {
+    if (!cutoutCropDrag) {
+        return;
+    }
+    const point = getCutoutPoint(event);
+    cutoutManualCrop = normalizeCutoutCrop(cutoutCropDrag.start, point || cutoutCropDrag.end);
+    cutoutCropDrag = null;
+    cutoutSourceBox?.releasePointerCapture?.(event.pointerId);
+    updateCutoutCropOverlay();
+    if (cutoutManualCrop) {
+        processCutoutImage();
+    } else {
+        setCutoutStatus("裁剪框太小，请重新拖出更大的裁剪范围。", true);
+    }
+}
+
+function resetCutoutManualCrop() {
+    cutoutManualCrop = null;
+    cutoutCropDrag = null;
+    updateCutoutCropOverlay();
+    processCutoutImage();
+}
+
 function openExportDataModal() {
     if (!exportDataModal) {
         return;
@@ -981,6 +1509,42 @@ function getBlockPatternStyle(block) {
         : (defaultPatternStyleByType[block?.type] || defaultPatternStyleByType.conveying);
 }
 
+function getPatternImageOption(patternStyle) {
+    return screwElementImageOptionByValue.get(patternStyle) || null;
+}
+
+function getElementFamilyFromPattern(patternStyle) {
+    const imageOption = getPatternImageOption(patternStyle);
+    if (imageOption?.family) {
+        return imageOption.family;
+    }
+    switch (patternStyle) {
+        case "gfa":
+        case "diagonal":
+        case "fine-diagonal":
+            return "gfa";
+        case "gfm":
+        case "mixed":
+        case "cross":
+            return "gfm";
+        case "gff":
+        case "banded":
+            return "gff";
+        case "ks":
+        case "grid":
+        case "solid":
+            return "ks";
+        case "kb":
+        case "vertical":
+            return "kb";
+        case "kb-reverse":
+        case "reverse-diagonal":
+            return "kb";
+        default:
+            return "";
+    }
+}
+
 function getBlockColor(block) {
     return normalizeBlockColor(block?.color, block?.type);
 }
@@ -1015,6 +1579,227 @@ function getModuleBackground(block) {
         case "diagonal":
         default:
             return `repeating-linear-gradient(135deg, ${hexToRgba(color, 0.18)} 0 7px, ${hexToRgba(color, 0.58)} 7px 14px)`;
+    }
+}
+
+function getBlockCode(block) {
+    return typeof block?.code === "string" ? block.code.toUpperCase() : "";
+}
+
+function getElementFamily(block) {
+    const patternFamily = getElementFamilyFromPattern(getBlockPatternStyle(block));
+    if (patternFamily) {
+        return patternFamily;
+    }
+    const code = getBlockCode(block);
+    if (code.startsWith("GFA")) {
+        return "gfa";
+    }
+    if (code.startsWith("GFM")) {
+        return "gfm";
+    }
+    if (code.startsWith("GFF")) {
+        return "gff";
+    }
+    if (code.startsWith("KB")) {
+        return "kb";
+    }
+    if (code.startsWith("KS")) {
+        return "ks";
+    }
+    return block?.type || "conveying";
+}
+
+function getElementDirection(block) {
+    const patternStyle = getBlockPatternStyle(block);
+    if (patternStyle === "kb-reverse" || patternStyle === "reverse-diagonal") {
+        return "left";
+    }
+    const code = getBlockCode(block);
+    if (code.includes("-LI") || code.includes("-L")) {
+        return "left";
+    }
+    if (block?.type === "reverse" || code.includes("-RE") || code.includes("-R")) {
+        return "right";
+    }
+    return "right";
+}
+
+function getKneadingDiscCount(block) {
+    const family = getElementFamilyFromPattern(getBlockPatternStyle(block));
+    if (family === "ks") {
+        return 6;
+    }
+    if (family === "kb") {
+        return getBlockPatternStyle(block) === "kb-reverse" ? 6 : 5;
+    }
+    const code = getBlockCode(block);
+    const match = code.match(/^KB(\d+)/);
+    if (match) {
+        return Math.max(3, Math.min(12, Number(match[1])));
+    }
+    return block?.type === "kneading" || block?.type === "reverse" ? 5 : 0;
+}
+
+function getModuleBladeCount(block) {
+    const family = getElementFamily(block);
+    if (family === "kb" || family === "ks" || block?.type === "kneading" || block?.type === "reverse") {
+        return getKneadingDiscCount(block);
+    }
+    if (family === "gff") {
+        return Math.max(4, Math.min(14, Math.round(getBlockLength(block) / 24)));
+    }
+    if (family === "gfm") {
+        return Math.max(5, Math.min(16, Math.round(getBlockLength(block) / 12)));
+    }
+    return Math.max(4, Math.min(18, Math.round(getBlockLength(block) / 14)));
+}
+
+function createSvgNode(name, attributes = {}) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    Object.entries(attributes).forEach(([key, value]) => {
+        node.setAttribute(key, String(value));
+    });
+    return node;
+}
+
+function createModuleProfileSvg(block) {
+    const family = getElementFamily(block);
+    const direction = getElementDirection(block);
+    const color = getBlockColor(block);
+    const svg = createSvgNode("svg", {
+        class: "module-profile",
+        viewBox: "0 0 120 48",
+        preserveAspectRatio: "none",
+        focusable: "false",
+        "aria-hidden": "true"
+    });
+
+    const defs = createSvgNode("defs");
+    const gradientId = `module-metal-${nextId("grad")}`;
+    const gradient = createSvgNode("linearGradient", {
+        id: gradientId,
+        x1: "0",
+        y1: "0",
+        x2: "0",
+        y2: "1"
+    });
+    [
+        ["0%", "rgba(255,255,255,0.96)"],
+        ["22%", hexToRgba(color, 0.32)],
+        ["48%", hexToRgba(color, 0.88)],
+        ["70%", "rgba(255,255,255,0.7)"],
+        ["100%", hexToRgba(color, 0.74)]
+    ].forEach(([offset, stopColor]) => {
+        gradient.appendChild(createSvgNode("stop", { offset, "stop-color": stopColor }));
+    });
+    defs.appendChild(gradient);
+
+    const shadowId = `module-shadow-${nextId("filter")}`;
+    const filter = createSvgNode("filter", {
+        id: shadowId,
+        x: "-10%",
+        y: "-18%",
+        width: "120%",
+        height: "136%"
+    });
+    filter.appendChild(createSvgNode("feDropShadow", {
+        dx: "0",
+        dy: "1.2",
+        stdDeviation: "1.1",
+        "flood-color": "rgba(0,0,0,0.28)"
+    }));
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+
+    const body = createSvgNode("g", {
+        class: `module-profile-body ${family}`,
+        filter: `url(#${shadowId})`
+    });
+
+    if (family === "kb" || family === "ks" || block.type === "kneading" || block.type === "reverse") {
+        renderKneadingProfile(body, block, gradientId, direction);
+    } else if (family === "gfm") {
+        renderMixingProfile(body, block, gradientId, direction);
+    } else {
+        renderConveyingProfile(body, block, gradientId, direction);
+    }
+
+    svg.appendChild(body);
+    svg.appendChild(createSvgNode("path", {
+        class: "module-profile-shine",
+        d: "M2 7 L118 7 L118 13 L2 13 Z"
+    }));
+    return svg;
+}
+
+function renderConveyingProfile(target, block, gradientId, direction) {
+    const family = getElementFamily(block);
+    const count = family === "gff"
+        ? Math.max(4, Math.min(8, Math.round(getBlockLength(block) / 32)))
+        : Math.max(5, Math.min(11, Math.round(getBlockLength(block) / 12)));
+    const step = 120 / count;
+    const skew = direction === "left" || block.type === "reverse" ? -1 : 1;
+    const topY = 8;
+    const bottomY = 40;
+
+    for (let index = -1; index <= count; index += 1) {
+        const x = index * step;
+        const d = skew > 0
+            ? `M${x - 3} ${bottomY} L${x + step * 0.42} ${topY} L${x + step * 0.72} ${topY + 1} L${x + step * 0.24} ${bottomY} Z`
+            : `M${x + step * 0.72} ${bottomY} L${x + step * 0.24} ${topY} L${x - 3} ${topY + 1} L${x + step * 0.42} ${bottomY} Z`;
+        target.appendChild(createSvgNode("path", {
+            class: "profile-flight",
+            d,
+            fill: `url(#${gradientId})`
+        }));
+    }
+
+    target.appendChild(createSvgNode("path", {
+        class: "profile-outline",
+        d: `M0 ${topY + 2} L120 ${topY + 2} M0 ${bottomY - 2} L120 ${bottomY - 2}`
+    }));
+}
+
+function renderMixingProfile(target, block, gradientId, direction) {
+    const count = Math.max(7, Math.min(14, Math.round(getBlockLength(block) / 8)));
+    const step = 120 / count;
+    const skew = direction === "left" ? -1 : 1;
+    for (let index = 0; index < count; index += 1) {
+        const cx = index * step + step / 2;
+        const flip = index % 2 === 0 ? 1 : -1;
+        const topY = flip > 0 ? 8 : 10;
+        const bottomY = flip > 0 ? 38 : 40;
+        const d = `M${cx - step * 0.48} ${24 - flip * 6} L${cx + step * 0.1 * skew} ${topY} L${cx + step * 0.46} ${24 + flip * 6} L${cx - step * 0.12 * skew} ${bottomY} Z`;
+        target.appendChild(createSvgNode("path", {
+            class: "profile-flight mixing",
+            d,
+            fill: `url(#${gradientId})`
+        }));
+    }
+}
+
+function renderKneadingProfile(target, block, gradientId, direction) {
+    const count = getKneadingDiscCount(block);
+    const step = 120 / count;
+    const reverse = block.type === "reverse" || direction === "left";
+    for (let index = 0; index < count; index += 1) {
+        const x = index * step + 1;
+        const angle = reverse
+            ? (index % 2 === 0 ? 10 : -12)
+            : (index % 2 === 0 ? -10 : 12);
+        const disc = createSvgNode("path", {
+            class: "profile-disc",
+            d: `M${x + 3} 9 L${x + step - 5} 8 L${x + step - 2} 39 L${x + 5} 40 Z`,
+            fill: `url(#${gradientId})`,
+            transform: `rotate(${angle} ${x + step / 2} 24)`
+        });
+        target.appendChild(disc);
+        target.appendChild(createSvgNode("path", {
+            class: "profile-disc-edge",
+            d: `M${x + step - 5} 8 L${x + step - 2} 39`,
+            transform: `rotate(${angle} ${x + step / 2} 24)`
+        }));
     }
 }
 
@@ -1209,12 +1994,45 @@ function renderSleeveEditor(screw = getScrewById(state.editingScrewId)) {
     });
 }
 
+function populatePatternStyleOptions() {
+    if (!blockPatternStyleInput) {
+        return;
+    }
+    blockPatternStyleInput.innerHTML = "";
+    screwElementImageOptions.forEach((option) => {
+        const item = document.createElement("option");
+        item.value = option.value;
+        item.textContent = option.label;
+        blockPatternStyleInput.appendChild(item);
+    });
+}
+
 function createModuleElement(block, extraClassName = "") {
     const module = document.createElement("div");
     module.className = `slot-module ${extraClassName}`.trim();
     module.dataset.type = block.type;
     module.dataset.pattern = getBlockPatternStyle(block);
-    module.style.background = getModuleBackground(block);
+    module.dataset.family = getElementFamily(block);
+    module.dataset.direction = getElementDirection(block);
+    const color = getBlockColor(block);
+    module.style.setProperty("--block-color", color);
+    module.style.setProperty("--blade-light", hexToRgba(color, 0.52));
+    module.style.setProperty("--blade-strong", hexToRgba(color, 0.92));
+    module.style.setProperty("--module-background", getModuleBackground(block));
+    module.style.setProperty("--blade-count", String(getModuleBladeCount(block)));
+    const imageOption = getPatternImageOption(getBlockPatternStyle(block));
+    if (imageOption) {
+        module.dataset.render = "image";
+        const image = document.createElement("img");
+        image.className = "module-image";
+        image.src = imageOption.src;
+        image.alt = imageOption.label;
+        image.draggable = false;
+        module.appendChild(image);
+    } else {
+        module.dataset.render = "svg";
+        module.appendChild(createModuleProfileSvg(block));
+    }
     module.setAttribute("aria-label", `${block.code} ${getTypeLabel(block.type)}`);
     return module;
 }
@@ -3488,6 +4306,21 @@ deleteCurrentBlockButton.addEventListener("click", () => {
     input?.addEventListener("change", renderBlockPreview);
 });
 
+cutoutFileInput?.addEventListener("change", handleCutoutFileChange);
+cutoutDownloadButton?.addEventListener("click", downloadCutoutResult);
+cutoutSourceBox?.addEventListener("click", handleCutoutSourceClick);
+cutoutSourceBox?.addEventListener("keydown", handleCutoutSourceKeydown);
+cutoutSourceBox?.addEventListener("dragover", handleCutoutDragOver);
+cutoutSourceBox?.addEventListener("dragleave", handleCutoutDragLeave);
+cutoutSourceBox?.addEventListener("drop", handleCutoutDrop);
+cutoutSourceBox?.addEventListener("pointerdown", handleCutoutCropStart);
+cutoutSourceBox?.addEventListener("pointermove", handleCutoutCropMove);
+cutoutSourceBox?.addEventListener("pointerup", handleCutoutCropEnd);
+cutoutSourceBox?.addEventListener("pointercancel", handleCutoutCropEnd);
+cutoutAutoCropButton?.addEventListener("click", resetCutoutManualCrop);
+cutoutResetCropButton?.addEventListener("click", resetCutoutManualCrop);
+window.addEventListener("resize", updateCutoutCropOverlay);
+
 screwStage.addEventListener("dragover", handleStageDragOver);
 screwStage.addEventListener("drop", handleStageDrop);
 screwStage.addEventListener("dragleave", (event) => {
@@ -3518,6 +4351,7 @@ window.addEventListener("blur", () => {
     }
 });
 
+populatePatternStyleOptions();
 populateBlockForm(null);
 populateScrewSettingsForm(getScrewById(state.editingScrewId));
 const initialActiveScrew = getActiveScrew();

@@ -17,6 +17,7 @@
                 <button class="nav-item active" data-page="home" type="button">排布设计</button>
                 <button class="nav-item" data-page="screw-settings" type="button">螺杆库</button>
                 <button class="nav-item" data-page="screw-blocks" type="button">模块库</button>
+                <button class="nav-item" data-page="image-cutout" type="button">扣图工具</button>
                 <button class="nav-item" data-page="history" type="button">历史方案</button>
                 <button class="nav-item" data-page="system-settings" type="button">系统设置</button>
             </nav>
@@ -317,15 +318,6 @@
                                 <label>
                                     <span>螺纹样式</span>
                                     <select id="block-pattern-style">
-                                        <option value="diagonal">斜纹</option>
-                                        <option value="fine-diagonal">细斜纹</option>
-                                        <option value="vertical">竖纹</option>
-                                        <option value="reverse-diagonal">反斜纹</option>
-                                        <option value="mixed">混合纹</option>
-                                        <option value="cross">交叉纹</option>
-                                        <option value="grid">网格纹</option>
-                                        <option value="banded">宽带纹</option>
-                                        <option value="solid">纯色</option>
                                     </select>
                                 </label>
                                 <label>
@@ -350,6 +342,46 @@
                         </form>
                     </section>
                 </div>
+            </section>
+
+            <section id="image-cutout" class="page">
+                <section class="card image-cutout-page">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Image Tool</p>
+                            <h3>图片扣图工具</h3>
+                        </div>
+                        <div class="section-actions">
+                            <button id="cutout-auto-crop" class="btn ghost" type="button" disabled>自动裁剪</button>
+                            <button id="cutout-reset-crop" class="btn ghost" type="button" disabled>清除裁剪框</button>
+                            <button id="cutout-download" class="btn ghost" type="button" disabled>下载 PNG</button>
+                        </div>
+                    </div>
+                    <section class="image-cutout-tool" aria-labelledby="image-cutout-title">
+                        <input id="cutout-file" class="cutout-file-input" type="file" accept="image/png,image/jpeg,image/webp">
+                        <div class="cutout-preview-grid">
+                            <div class="cutout-preview-panel">
+                                <div class="preview-panel-title">
+                                    <span id="image-cutout-title">原图</span>
+                                </div>
+                                <div class="cutout-preview-box cutout-source-box" id="cutout-source-box" role="button" tabindex="0">
+                                    <img id="cutout-source-preview" alt="原图预览">
+                                    <div class="cutout-empty-state">拖入图片或点击选择</div>
+                                    <div id="cutout-crop-overlay" class="cutout-crop-overlay" hidden></div>
+                                </div>
+                            </div>
+                            <div class="cutout-preview-panel">
+                                <div class="preview-panel-title">
+                                    <span>扣图结果</span>
+                                </div>
+                                <div class="cutout-preview-box checkerboard">
+                                    <canvas id="cutout-result-canvas" aria-label="扣图结果预览"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="cutout-status" class="cutout-status">选择图片后会自动去掉白色背景并裁切到螺纹块边界。</p>
+                    </section>
+                </section>
             </section>
 
             <section id="history" class="page">

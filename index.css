@@ -1175,6 +1175,27 @@ button {
         linear-gradient(180deg, rgba(251, 252, 252, 0.98), rgba(214, 219, 223, 0.94)),
         repeating-linear-gradient(135deg, transparent 0 8px, rgba(96, 104, 112, 0.11) 8px 10px);
     box-shadow: none;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.screw-stage::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.72);
+    border-bottom: 1px solid rgba(48, 56, 64, 0.38);
+    transform: translateY(-50%);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(202, 209, 215, 0.96) 44%, rgba(102, 114, 124, 0.74));
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.52),
+        inset 0 -3px 4px rgba(45, 52, 58, 0.18);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .stage-cap {
@@ -1184,6 +1205,7 @@ button {
     height: var(--screw-track-height);
     background: #767f88;
     transform: translateY(-50%);
+    z-index: 3;
 }
 
 .stage-cap.left {
@@ -1203,7 +1225,7 @@ button {
 
 .slot {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: flex;
     flex: 0 0 var(--slot-width, 72px);
     justify-content: center;
@@ -1279,43 +1301,124 @@ body.slot-dragging {
 }
 
 .slot-module {
+    --block-color: #8f9ba7;
+    --blade-light: rgba(143, 155, 167, 0.52);
+    --blade-strong: rgba(143, 155, 167, 0.92);
+    --module-background: linear-gradient(180deg, rgba(245, 247, 248, 0.96), rgba(180, 188, 195, 0.92));
+    --blade-count: 6;
     position: relative;
     width: 100%;
     height: var(--screw-track-height);
     box-sizing: border-box;
-    border: 1px solid rgba(34, 38, 43, 0.12);
+    overflow: visible;
+    border: none;
     border-radius: 0;
+    background: transparent;
     box-shadow: none;
     transition: 0.18s ease;
 }
 
 .slot:hover .slot-module {
     border-color: rgba(210, 106, 27, 0.55);
-    box-shadow: 0 0 0 1px rgba(210, 106, 27, 0.16);
+    box-shadow: none;
 }
 
 .slot-module::before {
     content: "";
     position: absolute;
-    inset: 7px;
-    border: 1px solid rgba(255, 255, 255, 0.56);
-    border-radius: 0;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: rgba(34, 38, 43, 0.16);
+    transform: translateY(-50%);
+    z-index: 4;
 }
 
 .slot-module[data-type="conveying"] {
-    background: repeating-linear-gradient(135deg, rgba(143, 155, 167, 0.18) 0 7px, rgba(143, 155, 167, 0.58) 7px 14px);
+    background: transparent;
 }
 
 .slot-module[data-type="kneading"] {
-    background: repeating-linear-gradient(90deg, rgba(207, 122, 55, 0.18) 0 4px, rgba(207, 122, 55, 0.58) 4px 8px);
+    background: transparent;
 }
 
 .slot-module[data-type="reverse"] {
-    background: repeating-linear-gradient(45deg, rgba(74, 85, 96, 0.24) 0 5px, rgba(74, 85, 96, 0.62) 5px 10px);
+    background: transparent;
 }
 
 .slot-module[data-type="mixing"] {
-    background: repeating-linear-gradient(135deg, rgba(167, 176, 154, 0.2) 0 5px, rgba(167, 176, 154, 0.58) 5px 9px, rgba(255, 255, 255, 0.45) 9px 12px);
+    background: transparent;
+}
+
+.slot-module[data-render="image"] {
+    height: var(--screw-track-height);
+    overflow: hidden;
+}
+
+.module-profile {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 96%;
+    z-index: 2;
+}
+
+.module-image {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    object-position: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    user-select: none;
+    z-index: 2;
+}
+
+.slot-module[data-render="image"]::before {
+    display: none;
+}
+
+.profile-core {
+    display: none;
+}
+
+.profile-core.mixing {
+    fill: rgba(220, 226, 214, 0.72);
+}
+
+.profile-core.kneading {
+    fill: rgba(210, 216, 220, 0.82);
+    stroke-width: 0.7;
+}
+
+.profile-flight,
+.profile-disc {
+    stroke: rgba(26, 31, 36, 0.52);
+    stroke-width: 0.75;
+    vector-effect: non-scaling-stroke;
+}
+
+.profile-flight.mixing {
+    stroke-width: 0.6;
+}
+
+.profile-disc-edge,
+.profile-outline {
+    fill: none;
+    stroke: rgba(31, 36, 41, 0.6);
+    stroke-width: 0.7;
+    vector-effect: non-scaling-stroke;
+}
+
+.module-profile-shine {
+    fill: rgba(255, 255, 255, 0.42);
+    pointer-events: none;
 }
 
 .selection-toolbar {
@@ -2044,6 +2147,152 @@ body.slot-dragging {
 .block-form textarea:focus {
     outline: 3px solid rgba(210, 106, 27, 0.12);
     border-color: rgba(210, 106, 27, 0.24);
+}
+
+.image-cutout-page {
+    max-width: 1180px;
+}
+
+.image-cutout-tool {
+    display: grid;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.image-cutout-page .image-cutout-tool {
+    margin-top: 12px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line-strong);
+}
+
+.tool-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tool-heading h4 {
+    margin: 3px 0 0;
+    font-size: 16px;
+    color: var(--ink);
+}
+
+.tool-kicker {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cutout-file-input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cutout-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.cutout-preview-panel {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.preview-panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #8a552f;
+    font-weight: 700;
+}
+
+.cutout-preview-box {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 280px;
+    overflow: hidden;
+    border: 1px solid rgba(60, 60, 67, 0.12);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.cutout-source-box {
+    cursor: crosshair;
+    border-style: dashed;
+    border-color: rgba(210, 106, 27, 0.32);
+    transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cutout-source-box.drag-over {
+    border-color: rgba(210, 106, 27, 0.9);
+    background: rgba(255, 247, 239, 0.95);
+    box-shadow: 0 0 0 4px rgba(210, 106, 27, 0.08);
+}
+
+.cutout-empty-state {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.cutout-source-box.has-image .cutout-empty-state {
+    display: none;
+}
+
+.cutout-preview-box.checkerboard {
+    background-color: #fff;
+    background-image:
+        linear-gradient(45deg, rgba(108, 118, 128, 0.18) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(108, 118, 128, 0.18) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(108, 118, 128, 0.18) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(108, 118, 128, 0.18) 75%);
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-size: 16px 16px;
+}
+
+.cutout-preview-box img,
+.cutout-preview-box canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 360px;
+}
+
+.cutout-preview-box img:not([src]) {
+    display: none;
+}
+
+.cutout-status {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+.cutout-status.error {
+    color: #b42318;
+}
+
+.cutout-crop-overlay {
+    position: absolute;
+    border: 2px solid #d26a1b;
+    background: rgba(210, 106, 27, 0.12);
+    box-shadow: 0 0 0 9999px rgba(24, 29, 35, 0.18);
+    pointer-events: none;
+    z-index: 3;
 }
 
 .block-preview-stage {
